@@ -1,0 +1,82 @@
+services:
+  delivery-mongo:
+    image: mongo:latest
+    container_name: delivery-mongo
+    ports:
+      - "27018:27017"
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - delivery_network
+
+  delivery-redis:
+    image: redis:latest
+    container_name: delivery-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - delivery_network
+
+  delivery-keycloak:
+    image: quay.io/keycloak/keycloak:latest
+    container_name: delivery-keycloak
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - exec 3<>/dev/tcp/127.0.0.1/8080 && exit 0 || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+    environment:
+      - KEYCLOAK_ADMIN=admin
+      - KEYCLOAK_ADMIN_PASSWORD=admin
+      - KC_HOSTNAME=http://${EXTERNAL_URL:-192.168.137.1}:9090
+    ports:
+      - "9090:8080"
+    volumes:
+      - ./keycloak-themes/delivery-theme:/opt/keycloak/themes/delivery-theme
+      - keycloak_data:/opt/keycloak/data
+      - ./realm-export.json:/opt/keycloak/data/import/realm-export.json
+    command: start-dev --import-realm
+    networks:
+      - delivery_network
+
+  delivery-backend:
+    build: .
+    container_name: delivery-backend
+    ports:
+      - "8080:8080"
+    environment:
+      - KEYCLOAK_BASE_URL=http://delivery-keycloak:8080
+      - KEYCLOAK_CLIENT_SECRET=${KEYCLOAK_SECRET}
+      - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI=http://delivery-keycloak:8080/realms/delivery-realm/protocol/openid-connect/certs
+    depends_on:
+      delivery-keycloak:
+        condition: service_healthy
+    volumes:
+      - ./uploads:/app/uploads
+    networks:
+      - delivery_network
+
+  delivery-frontend:
+    build: ../delivery-frontend
+    container_name: delivery-frontend
+    ports:
+      - "4200:80"
+      - "4443:443"
+    volumes:
+      - ./ssl:/etc/nginx/ssl:ro
+      - ../delivery-frontend/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - delivery-backend
+    networks:
+      - delivery_network
+
+volumes:
+  mongo_data:
+  keycloak_data:
+
+networks:
+  delivery_network:
+    driver: bridge
