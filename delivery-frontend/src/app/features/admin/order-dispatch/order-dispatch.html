@@ -1,0 +1,215 @@
+<div class="dispatch-page">
+  <!-- Top Breadcrumb & Workflow Stepper -->
+  <div class="dispatch-topbar">
+    <a routerLink="/admin/dashboard" class="back-link">
+      ← Back to Dashboard
+    </a>
+
+    <div class="workflow-steps">
+      <div class="step completed">
+        <span class="step-badge">✓</span>
+        <span>1. Order Accepted (PREPARING)</span>
+      </div>
+      <div class="step-line active"></div>
+      <div class="step" [class.completed]="isAssignedSuccess()" [class.active]="!isAssignedSuccess()">
+        <span class="step-badge">{{ isAssignedSuccess() ? '✓' : '2' }}</span>
+        <span>2. Closest Rider Computed</span>
+      </div>
+      <div class="step-line" [class.active]="isAssignedSuccess()"></div>
+      <div class="step" [class.completed]="isAssignedSuccess()">
+        <span class="step-badge">{{ isAssignedSuccess() ? '✓' : '3' }}</span>
+        <span>3. Out for Delivery</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Two-Column Layout -->
+  <div class="dispatch-grid">
+
+    <!-- LEFT COLUMN: Order Context Card -->
+    <section class="context-card">
+      <div class="card-head">
+        <div>
+          <span class="eyebrow">ACCEPTED ORDER SUMMARY</span>
+          <h2>Order #{{ orderId() | slice:-8 | uppercase }}</h2>
+        </div>
+        <span class="status-pill" [class.dispatched]="isAssignedSuccess()">
+          {{ isAssignedSuccess() ? 'OUT_FOR_DELIVERY' : (orderDetail()?.status || 'PREPARING') }}
+        </span>
+      </div>
+
+      @if (isLoadingOrder()) {
+        <div class="skeleton-box">Loading order details...</div>
+      } @else if (orderDetail(); as detail) {
+        <div class="customer-block">
+          <div class="block-title">📍 Delivery Destination</div>
+          <div class="meta-row">
+            <span>Customer</span>
+            <strong>{{ detail.customer?.name || 'Customer' }}</strong>
+          </div>
+          <div class="meta-row">
+            <span>Phone</span>
+            <a [href]="'tel:' + detail.shippingPhone" class="phone-link">{{ detail.shippingPhone }}</a>
+          </div>
+          <div class="meta-row">
+            <span>Address</span>
+            <strong>{{ detail.deliveryAddress }}</strong>
+          </div>
+        </div>
+
+        <div class="items-block">
+          <div class="block-title">🍔 Items to Prepare & Pick Up ({{ detail.items.length }})</div>
+          <div class="item-list">
+            @for (item of detail.items; track $index) {
+              <div class="item-row">
+                <div class="item-info">
+                  <img
+                    [src]="resolveImageUrl(item.image)"
+                    [alt]="item.name"
+                    class="item-img"
+                    onerror="this.style.display='none'"
+                  />
+                  <div>
+                    <strong>{{ item.name }}</strong>
+                    <span>Qty: {{ item.quantity }} × MMK {{ item.priceAtPurchase | number }}</span>
+                  </div>
+                </div>
+                <strong>MMK {{ (item.quantity * item.priceAtPurchase) | number }}</strong>
+              </div>
+            }
+          </div>
+
+          <div class="totals-box">
+            <div class="t-row">
+              <span>Food Subtotal</span>
+              <span>MMK {{ foodSubtotal() | number }}</span>
+            </div>
+            <div class="t-row">
+              <span>Delivery Fee</span>
+              <span>MMK {{ deliveryFee() | number }}</span>
+            </div>
+            <div class="t-row grand">
+              <span>Total Verified</span>
+              <span>MMK {{ detail.totalAmount | number }}</span>
+            </div>
+          </div>
+        </div>
+      }
+    </section>
+
+    <!-- RIGHT COLUMN: Auto-Computed Nearest Available Rider -->
+    <section class="rider-dispatch-card">
+      <div class="card-head">
+        <div>
+          <span class="eyebrow">BACKEND GEO-MATCHING ENGINE</span>
+          <h2>Closest Available Rider</h2>
+        </div>
+
+        @if (!isAssignedSuccess()) {
+          <button
+            type="button"
+            class="rescan-btn"
+            [disabled]="isScanningRider() || isAssigning()"
+            (click)="scanForNearestRider()"
+          >
+            ↻ Re-scan
+          </button>
+        }
+      </div>
+
+      @if (isScanningRider()) {
+        <!-- STATE 1: Scanning for Nearest Rider -->
+        <div class="radar-state">
+          <div class="radar-circle"></div>
+          <h3>Computing Closest Available Rider...</h3>
+          <p>Calculating shortest distance from active riders to the restaurant.</p>
+        </div>
+      } @else if (isAssignedSuccess() && nearestRider(); as rider) {
+        <!-- STATE 2: Successfully Assigned! -->
+        <div class="assigned-success-box">
+          <div class="check-circle">✓</div>
+          <h3>Order Dispatched Successfully!</h3>
+          <p>
+            <strong>{{ rider.name }}</strong> ({{ rider.phone }}) has been assigned to Order
+            <strong>#{{ orderId() | slice:-8 | uppercase }}</strong> and the status is now
+            <span class="badge-inline">OUT_FOR_DELIVERY</span>.
+          </p>
+
+          <div class="success-actions">
+            <button type="button" class="primary-dispatch-btn" (click)="backToDashboard()">
+              ← Return to Executive Dashboard
+            </button>
+          </div>
+        </div>
+      } @else if (nearestRider(); as rider) {
+        <!-- STATE 3: Nearest Rider Found & Ready to Assign -->
+        <div class="matched-rider-box">
+          <div class="match-banner">
+            <span class="pulse-dot"></span>
+            <span>Optimal Match Computed by Backend</span>
+          </div>
+
+          <div class="rider-profile-card">
+            <div class="rider-avatar">
+              {{ rider.name.charAt(0) | uppercase }}
+            </div>
+            <div class="rider-details">
+              <div class="rider-name-row">
+                <h3>{{ rider.name }}</h3>
+                <span class="avail-badge">{{ rider.status }}</span>
+              </div>
+              <p class="rider-phone">📞 {{ rider.phone }}</p>
+              <p class="rider-id">ID: <code>{{ rider.riderId }}</code></p>
+
+              @if (liveRiderCoordinates(); as coords) {
+                <p class="live-coords">
+                  📡 Live GPS: {{ coords.latitude }}, {{ coords.longitude }}
+                </p>
+              }
+            </div>
+          </div>
+
+          <div class="dispatch-notice">
+            <span>⚡</span>
+            <p>
+              This rider is verified as the closest <strong>AVAILABLE</strong> rider for this order.
+              Clicking assign will immediately dispatch the order and change its status to
+              <strong>OUT_FOR_DELIVERY</strong>.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            class="primary-dispatch-btn"
+            [disabled]="isAssigning()"
+            (click)="confirmAssignRider()"
+          >
+            @if (isAssigning()) {
+              <span>Dispatching Order to {{ rider.name }}...</span>
+            } @else {
+              <span>🛵 Assign Order to {{ rider.name }}</span>
+            }
+          </button>
+        </div>
+      } @else {
+        <!-- STATE 4: No Available Rider Found right now -->
+        <div class="no-rider-box">
+          <div class="warn-icon">🛵</div>
+          <h3>No Available Rider Found Right Now</h3>
+          <p>{{ riderScanError() }}</p>
+          <p class="sub-hint">
+            @if (wsConnected()) {
+              Listening to live rider location stream — this page will automatically update as soon as a rider becomes AVAILABLE.
+            } @else {
+              Click the button below to check for available riders again.
+            }
+          </p>
+          <button type="button" class="primary-dispatch-btn" (click)="scanForNearestRider()">
+            ↻ Scan Again for Available Rider
+          </button>
+        </div>
+      }
+    </section>
+
+  </div>
+</div>

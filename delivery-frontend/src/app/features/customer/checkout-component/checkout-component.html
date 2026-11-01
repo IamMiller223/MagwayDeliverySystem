@@ -1,0 +1,65 @@
+<div class="checkout-wrapper">
+  <div class="checkout-header">
+    <h2>Step 1: Delivery Location</h2>
+    <p>Pinpoint your location in Magway and provide your contact details.</p>
+  </div>
+
+  <div class="checkout-grid">
+    <!-- Map Section (Left Column) -->
+    <div class="map-card">
+
+      <!-- New Flex Container for Header Actions -->
+      <div class="map-header-actions">
+        <span class="instruction-text">Drag pin or click map to set location</span>
+
+        <button class="current-location-btn" (click)="getCurrentLocation()" title="Use my current location">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="18" height="18">
+            <path d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3c-.46-4.17-3.77-7.48-7.94-7.94V1h-2v2.06C6.83 3.52 3.52 6.83 3.06 11H1v2h2.06c.46 4.17 3.77 7.48 7.94 7.94V23h2v-2.06c4.17-.46 7.48-3.77 7.94-7.94H23v-2h-2.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"/>
+          </svg>
+          <span>Locate Me</span>
+        </button>
+      </div>
+
+      <div id="map" class="map-container"></div>
+
+      <div class="coordinates-display">
+        Lat: {{ selectedLat() | number:'1.4-4' }}, Lng: {{ selectedLng() | number:'1.4-4' }}
+      </div>
+    </div>
+
+    <!-- Contact & Details Section (Right Column) -->
+    <div class="details-card">
+      <h3>Contact Information</h3>
+
+      <div class="form-group">
+        <label for="shippingPhone">Myanmar Phone Number</label>
+        <input
+          type="tel"
+          id="shippingPhone"
+          name="shippingPhone"
+          [ngModel]="shippingPhone()"
+          (ngModelChange)="shippingPhone.set($event)"
+          placeholder="+959 or 09..."
+          required
+        >
+      </div>
+
+      <div class="form-group">
+        <label for="deliveryAddress">Specific Delivery Details</label>
+        <textarea
+          id="deliveryAddress"
+          name="deliveryAddress"
+          [ngModel]="deliveryAddress()"
+          (ngModelChange)="deliveryAddress.set($event)"
+          placeholder="e.g., UCSM Hostel, Room 302, near the main gate..."
+          rows="4"
+          required
+        ></textarea>
+      </div>
+
+      <button class="continue-btn" (click)="continueToNextStep()">
+        Continue to Payment
+      </button>
+    </div>
+  </div>
+</div>

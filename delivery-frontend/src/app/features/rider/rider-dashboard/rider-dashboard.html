@@ -1,0 +1,576 @@
+<div class="rider-viewport myanmar-font" [class.dark-theme]="isDarkMode()">
+  <div class="mobile-app-container">
+
+    <!-- ==================== 1. MOBILE TOP HEADER ==================== -->
+    <header class="rider-topbar">
+      <div class="brand-area">
+        <div class="logo-badge">🛵</div>
+        <div class="brand-titles">
+          <h1 class="app-title">မကွေး ပို့ဆောင်ရေး</h1>
+          <span class="rider-sub">
+            @if (riderProfile(); as p) {
+              {{ p.name }} • {{ p.vehicle?.licenceNumber || 'RIDER' }}
+            } @else {
+              Rider Portal
+            }
+          </span>
+        </div>
+      </div>
+
+      <div class="top-controls">
+        <button
+          type="button"
+          class="icon-ctrl-btn"
+          (click)="toggleTheme()"
+          [title]="isDarkMode() ? 'နေ့မြင်ကွင်း' : 'ညမြင်ကွင်း'"
+        >
+          {{ isDarkMode() ? '☀️' : '🌙' }}
+        </button>
+
+        <button type="button" class="icon-ctrl-btn" (click)="toggleNotifDrawer()">
+          <span>🔔</span>
+          @if (unreadNotifCount() > 0) {
+            <span class="notif-badge">{{ unreadNotifCount() }}</span>
+          }
+        </button>
+
+        <button type="button" class="icon-ctrl-btn" (click)="loadAllDashboardData()">
+          ↻
+        </button>
+      </div>
+    </header>
+
+    <!-- ==================== 2. SSE NEW TASK TOAST ==================== -->
+    @if (latestToast(); as toast) {
+      <div class="new-task-toast" (click)="openTaskDetails(toast.orderId)">
+        <div class="toast-left">
+          <span>🚨</span>
+          <div>
+            <strong>တာဝန်အသစ် ရောက်ရှိလာပါသည်! (#{{ toast.orderId | slice:-6 | uppercase }})</strong>
+            <p>{{ toast.message }}</p>
+          </div>
+        </div>
+        <span class="toast-arrow">ကြည့်မည် →</span>
+      </div>
+    }
+
+    <!-- ==================== 3. ALWAYS-ON STATUS & 5s GPS TELEMETRY STRIP ==================== -->
+    <section class="status-gps-strip">
+      <div class="status-row">
+        <span class="strip-label">လက်ရှိအခြေအနေ</span>
+        <span
+          class="readonly-status-badge"
+          [class.avail]="riderStatus() === 'AVAILABLE'"
+          [class.busy]="riderStatus() === 'BUSY'"
+        >
+          <span class="status-dot"></span>
+          {{ riderStatus() === 'BUSY' ? 'ပို့ဆောင်နေသည် (BUSY)' : 'အားလပ်သည် (AVAILABLE)' }}
+        </span>
+      </div>
+
+      <div class="gps-telemetry-row">
+        <div class="gps-signal">
+          <span
+            class="signal-dot"
+            [class.online]="wsConnected() && gpsPermissionState() === 'TRACKING'"
+            [class.reconnecting]="!wsConnected()"
+          ></span>
+          @if (!wsConnected()) {
+            <span class="gps-text warn">လိုင်းပြန်လည်ချိတ်ဆက်နေသည် (Auto-Reconnecting)...</span>
+          } @else if (gpsPermissionState() === 'DENIED') {
+            <span class="gps-text error">⚠️ ဖုန်း၏ Location (GPS) ကို ဖွင့်ပေးထားရန် လိုအပ်ပါသည်</span>
+          } @else if (currentLat() !== null && currentLng() !== null) {
+            <span class="gps-text">
+              📡 GPS အလိုအလျောက်ပို့နေသည် (၅ စက္ကန့်တစ်ကြိမ်)
+            </span>
+          } @else {
+            <span class="gps-text">📡 ဖုန်း GPS တည်နေရာ ရှာဖွေနေသည်...</span>
+          }
+        </div>
+
+        @if (lastGpsSentAt(); as sentAt) {
+          <small class="gps-time">{{ sentAt | date:'h:mm:ss a' }}</small>
+        }
+      </div>
+    </section>
+
+    <!-- ==================== 4. MAIN SCROLLABLE VIEW ==================== -->
+    <main class="rider-content">
+
+      @if (activeTab() !== 'PROFILE') {
+        <section class="mobile-kpi-grid">
+          <div
+            class="m-kpi-card"
+            [class.selected]="activeTab() === 'ACTIVE'"
+            (click)="activeTab.set('ACTIVE')"
+          >
+            <span class="m-kpi-num orange">{{ stats().activeCount }}</span>
+            <span class="m-kpi-label">လက်ရှိပို့ဆောင်ရန်</span>
+          </div>
+
+          <div
+            class="m-kpi-card"
+            [class.selected]="activeTab() === 'COMPLETED'"
+            (click)="activeTab.set('COMPLETED')"
+          >
+            <span class="m-kpi-num green">{{ stats().completedCount }}</span>
+            <span class="m-kpi-label">ပို့ဆောင်ပြီးစီးမှု</span>
+          </div>
+        </section>
+      }
+
+      <!-- TAB 1: ACTIVE TASKS -->
+      @if (activeTab() === 'ACTIVE') {
+        <section class="task-list-section">
+          <div class="section-heading">
+            <h2>🛵 လက်ရှိပို့ဆောင်ရမည့် တာဝန်များ ({{ activeTasks().length }})</h2>
+          </div>
+
+          @if (isLoadingTasks()) {
+            <div class="empty-card">
+              <div class="spinner"></div>
+              <p>တာဝန်များကို ရယူနေပါသည်...</p>
+            </div>
+          } @else if (activeTasks().length === 0) {
+            <div class="empty-card">
+              <div class="empty-icon">🎉</div>
+              <h3>လက်ရှိ ပို့ဆောင်ရန် အော်ဒါ မရှိသေးပါ</h3>
+              <p>တာဝန်အသစ် ချထားပေးသည့်အခါ ချက်ချင်း ပေါ်လာပါမည်။</p>
+            </div>
+          } @else {
+            <div class="task-cards">
+              @for (task of activeTasks(); track task.orderId) {
+                <article class="mobile-task-card active" (click)="openTaskDetails(task.orderId)">
+                  <div class="card-top">
+                    <span class="order-id">#{{ task.orderId | slice:-8 | uppercase }}</span>
+                    <span class="prepaid-pill">✓ ငွေရှင်းပြီး</span>
+                  </div>
+
+                  <div class="card-mid">
+                    <div class="field-row">
+                      <span class="f-label">👤 ဝယ်သူအမည်</span>
+                      <strong class="f-val">{{ task.customerName }}</strong>
+                    </div>
+
+                    <div class="field-row">
+                      <span class="f-label">📍 ပို့ရမည့်လိပ်စာ</span>
+                      <strong class="f-val address">{{ task.deliveryAddress }}</strong>
+                    </div>
+
+                    <div class="field-row">
+                      <span class="f-label">🍔 အရေအတွက်</span>
+                      <strong class="f-val">{{ task.itemCount }} မျိုး</strong>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    class="view-route-btn"
+                    (click)="openTaskDetails(task.orderId); $event.stopPropagation()"
+                  >
+                    🧭 လမ်းကြောင်းနှင့် သွားယူရမည့်ဆိုင် ကြည့်ရန် →
+                  </button>
+                </article>
+              }
+            </div>
+          }
+        </section>
+      }
+
+      <!-- TAB 2: COMPLETED TASKS -->
+      @if (activeTab() === 'COMPLETED') {
+        <section class="task-list-section">
+          <div class="section-heading">
+            <h2>📜 ပို့ဆောင်ပြီးစီးခဲ့သော မှတ်တမ်း ({{ completedTasks().length }})</h2>
+          </div>
+
+          @if (completedTasks().length === 0) {
+            <div class="empty-card">
+              <p>ပို့ဆောင်ပြီးစီးခဲ့သော မှတ်တမ်း မရှိသေးပါ။</p>
+            </div>
+          } @else {
+            <div class="task-cards">
+              @for (task of completedTasks(); track task.orderId) {
+                <article class="mobile-task-card completed" (click)="openTaskDetails(task.orderId)">
+                  <div class="card-top">
+                    <span class="order-id">#{{ task.orderId | slice:-8 | uppercase }}</span>
+                    <span class="done-pill">✓ ပို့ဆောင်ပြီး</span>
+                  </div>
+
+                  <div class="card-mid">
+                    <div class="field-row">
+                      <span class="f-label">👤 ဝယ်သူ</span>
+                      <strong class="f-val">{{ task.customerName }}</strong>
+                    </div>
+                    <div class="field-row">
+                      <span class="f-label">📍 လိပ်စာ</span>
+                      <span class="f-val">{{ task.deliveryAddress }}</span>
+                    </div>
+                    <div class="field-row">
+                      <span class="f-label">🕒 အချိန်</span>
+                      <span class="f-val">{{ task.createdAt | date:'MMM d, y • h:mm a' }}</span>
+                    </div>
+                  </div>
+                </article>
+              }
+            </div>
+          }
+        </section>
+      }
+
+      <!-- TAB 3: RIDER PROFILE -->
+      @if (activeTab() === 'PROFILE') {
+        @if (riderProfile(); as profile) {
+          <section class="profile-section">
+            <div class="mobile-profile-card">
+              <div class="p-hero">
+                @if (profile.image) {
+                  <img [src]="resolveImageUrl(profile.image)" [alt]="profile.name" class="p-avatar" />
+                } @else {
+                  <div class="p-avatar-placeholder">{{ profile.name.charAt(0) | uppercase }}</div>
+                }
+                <h3>{{ profile.name }}</h3>
+                <span class="p-role-badge">RIDER • {{ riderStatus() }}</span>
+              </div>
+
+              <div class="p-info-list">
+                <div class="p-item">
+                  <span>📞 ဖုန်းနံပါတ်</span>
+                  <strong>{{ profile.phone }}</strong>
+                </div>
+                <div class="p-item">
+                  <span>✉️ အီးမေးလ်</span>
+                  <strong>{{ profile.email }}</strong>
+                </div>
+                <div class="p-item">
+                  <span>🪪 မှတ်ပုံတင် (NRC)</span>
+                  <strong>{{ profile.nrcNumber }}</strong>
+                </div>
+                @if (profile.vehicle; as v) {
+                  <div class="p-item">
+                    <span>🛵 ယာဉ်အမျိုးအစား</span>
+                    <strong>{{ v.type }}</strong>
+                  </div>
+                  <div class="p-item">
+                    <span>🔢 လိုင်စင်နံပါတ်</span>
+                    <strong class="plate-tag">{{ v.licenceNumber }}</strong>
+                  </div>
+                }
+              </div>
+
+              <button type="button" class="mobile-logout-btn" (click)="logout()">
+                🚪 အကောင့်မှ ထွက်မည် (Logout)
+              </button>
+            </div>
+          </section>
+        }
+      }
+
+    </main>
+
+    <!-- ==================== 5. FIXED MOBILE BOTTOM NAVIGATION ==================== -->
+    <nav class="mobile-bottom-nav">
+      <button
+        type="button"
+        class="b-nav-btn"
+        [class.active]="activeTab() === 'ACTIVE'"
+        (click)="activeTab.set('ACTIVE')"
+      >
+        <span class="b-icon">🛵</span>
+        <span>လက်ရှိတာဝန် ({{ activeTasks().length }})</span>
+      </button>
+
+      <button
+        type="button"
+        class="b-nav-btn"
+        [class.active]="activeTab() === 'COMPLETED'"
+        (click)="activeTab.set('COMPLETED')"
+      >
+        <span class="b-icon">📜</span>
+        <span>ပြီးစီးမှုမှတ်တမ်း</span>
+      </button>
+
+      <button
+        type="button"
+        class="b-nav-btn"
+        [class.active]="activeTab() === 'PROFILE'"
+        (click)="activeTab.set('PROFILE')"
+      >
+        <span class="b-icon">👤</span>
+        <span>ကိုယ်ရေးအချက်အလက်</span>
+      </button>
+    </nav>
+
+  </div>
+
+  <!-- ==================== 6. MOBILE BOTTOM-SHEET ORDER DETAILS ==================== -->
+  @if (isDetailModalOpen()) {
+    <div class="sheet-backdrop" (click)="closeTaskDetails()">
+      <div class="mobile-bottom-sheet" (click)="$event.stopPropagation()">
+        <div class="sheet-header">
+          <div>
+            <span class="sheet-eyebrow">အနီးဆုံးလမ်းကြောင်းနှင့် အော်ဒါစာရင်း</span>
+            @if (selectedOrderDetails(); as d) {
+              <h3>အော်ဒါ #{{ d.orderId | slice:-8 | uppercase }}</h3>
+            } @else {
+              <h3>ရယူနေပါသည်...</h3>
+            }
+          </div>
+          <button type="button" class="sheet-close-btn" (click)="closeTaskDetails()">✕ ပိတ်မည်</button>
+        </div>
+
+        @if (isLoadingDetail()) {
+          <div class="empty-card">
+            <div class="spinner"></div>
+            <p>အတိုဆုံးလမ်းကြောင်းနှင့် ဆိုင်တည်နေရာ တွက်ချက်နေပါသည်...</p>
+          </div>
+        } @else if (selectedOrderDetails(); as detail) {
+          <div class="sheet-body">
+
+            <!-- ROUTE MAP PREVIEW + FULLSCREEN IN-APP NAVIGATION LAUNCHER -->
+            <div class="map-box">
+              <div class="map-meta-bar">
+                <span>📏 စုစုပေါင်း: <strong>{{ detail.totalDistanceKm }} km</strong></span>
+                <span class="prepaid-pill">✓ ငွေရှင်းပြီး</span>
+              </div>
+              <div #routeMapContainer class="sheet-leaflet-map"></div>
+              <button
+                type="button"
+                class="launch-full-nav-btn"
+                (click)="openInAppNavigation('FULL_ROUTE')"
+              >
+                🧭 လမ်းညွှန်မြေပုံ အပြည့်ဖွင့်၍ မောင်းနှင်မည် (Live Navigation)
+              </button>
+            </div>
+
+            <!-- STEP 1: SHORTEST-PATH ORDERED PICKUP RESTAURANTS -->
+            <div class="step-card">
+              <h4>🏪 အဆင့် (၁) - အနီးဆုံးအစဉ်လိုက် သွားယူရမည့်ဆိုင် ({{ optimizedPickups().length }})</h4>
+              <div class="stop-list">
+                @for (stop of optimizedPickups(); track $index) {
+                  <div class="stop-row">
+                    <span class="stop-badge">{{ stop.sequenceNumber }}</span>
+                    <div class="stop-text">
+                      <strong>{{ stop.restaurantName }}</strong>
+                      <p>{{ stop.address }}</p>
+                      <small class="leg-dist">📍 အကွာအဝေး ~ {{ stop.distanceFromPrevKm }} km</small>
+                    </div>
+                    <button
+                      type="button"
+                      class="mini-map-btn"
+                      (click)="openInAppNavigation('PICKUP', $index)"
+                    >
+                      🧭 လမ်းညွှန်
+                    </button>
+                  </div>
+                }
+              </div>
+            </div>
+
+            <!-- STEP 2: RECIPIENT INFO -->
+            <div class="step-card">
+              <h4>📍 အဆင့် (၂) - ပို့ဆောင်ရမည့် ဝယ်သူအချက်အလက်</h4>
+              <div class="recipient-box">
+                <div class="recip-top">
+                  @if (detail.recipient.image) {
+                    <img
+                      [src]="resolveImageUrl(detail.recipient.image)"
+                      [alt]="detail.recipient.name"
+                      class="recip-img"
+                    />
+                  } @else {
+                    <div class="recip-placeholder">
+                      {{ detail.recipient.name.charAt(0) | uppercase }}
+                    </div>
+                  }
+                  <div class="recip-meta">
+                    <strong>{{ detail.recipient.name }}</strong>
+                    <p>🏠 {{ detail.deliveryDestinationAddress }}</p>
+                    <span>📞 {{ detail.recipient.phone }}</span>
+                  </div>
+                </div>
+
+                <div class="recip-btn-row">
+                  <a [href]="'tel:' + detail.recipient.phone" class="action-call-btn">
+                    📞 ဝယ်သူထံ ဖုန်းခေါ်ရန်
+                  </a>
+                  <button
+                    type="button"
+                    class="action-nav-btn"
+                    (click)="openInAppNavigation('CUSTOMER')"
+                  >
+                    🧭 ဝယ်သူထံ လမ်းညွှန်ဖွင့်ရန်
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- STEP 3: ITEM CHECKLIST (NO PRICES) -->
+            <div class="step-card">
+              <h4>🍔 အဆင့် (၃) - စစ်ဆေးယူရမည့် စားသောက်ကုန်စာရင်း</h4>
+              <div class="checklist-box">
+                @for (item of detail.receiptSummary; track $index) {
+                  <div class="check-item">
+                    <span class="qty-badge">{{ item.quantity }} ×</span>
+                    <strong class="dish-name">{{ item.name }}</strong>
+                  </div>
+                }
+              </div>
+            </div>
+
+          </div>
+
+          <div class="sheet-footer">
+            @if (detail.status !== 'DELIVERED') {
+              <button
+                type="button"
+                class="complete-order-btn"
+                [disabled]="isCompletingOrder()"
+                (click)="handleCompleteOrder(detail.orderId)"
+              >
+                {{ isCompletingOrder() ? 'အတည်ပြုနေပါသည်...' : '✓ ပို့ဆောင်မှု ပြီးစီးကြောင်း အတည်ပြုမည်' }}
+              </button>
+            } @else {
+              <div class="delivered-note">
+                ✅ ဤအော်ဒါကို ပို့ဆောင်ပြီးစီးခဲ့ပြီး ဖြစ်ပါသည်။
+              </div>
+            }
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- ==================== 7. IN-APP FULLSCREEN LIVE NAVIGATION OVERLAY ==================== -->
+  @if (isFullNavOpen() && selectedOrderDetails(); as detail) {
+    <div class="full-nav-overlay">
+
+      <!-- TOP TURN-BY-TURN & ETA BANNER (GOOGLE MAPS STYLE) -->
+      <header class="nav-top-banner">
+        <div class="nav-banner-main">
+          <div class="nav-direction-icon">🧭</div>
+          <div class="nav-banner-text">
+            <span class="nav-target-title">{{ navTargetTitle() }}</span>
+            <p class="nav-step-hint">{{ navNextStepInstruction() }}</p>
+          </div>
+          <button type="button" class="nav-close-btn" (click)="closeInAppNavigation()">
+            ✕ ပိတ်မည်
+          </button>
+        </div>
+
+        <!-- Road Distance, ETA & Continuous 5s GPS Indicator -->
+        <div class="nav-metrics-strip">
+          <div class="nav-metric">
+            <span>🛣️ လမ်းကြောင်းအကွာအဝေး</span>
+            <strong>{{ isCalculatingRoute() ? '...' : (navRoadDistanceKm() | number:'1.1-2') + ' km' }}</strong>
+          </div>
+          <div class="nav-metric">
+            <span>⏱️ ခန့်မှန်းကြာချိန်</span>
+            <strong>~ {{ isCalculatingRoute() ? '...' : navDurationMinutes() }} မိနစ်</strong>
+          </div>
+          <div class="nav-metric gps-live">
+            <span class="signal-dot online"></span>
+            <span>5s GPS လွှင့်နေသည်</span>
+          </div>
+        </div>
+
+        <!-- Target Leg Selector Pills (Full Route / Each Pickup / Customer) -->
+        <div class="nav-leg-pills">
+          <button
+            type="button"
+            class="leg-pill"
+            [class.active]="navTargetMode() === 'FULL_ROUTE'"
+            (click)="switchNavigationTarget('FULL_ROUTE')"
+          >
+            🛣️ လမ်းကြောင်းအပြည့်
+          </button>
+
+          @for (stop of optimizedPickups(); track $index) {
+            <button
+              type="button"
+              class="leg-pill"
+              [class.active]="navTargetMode() === 'PICKUP' && selectedPickupIndex() === $index"
+              (click)="switchNavigationTarget('PICKUP', $index)"
+            >
+              🏪 ဆိုင် ({{ stop.sequenceNumber }}) {{ stop.restaurantName }}
+            </button>
+          }
+
+          <button
+            type="button"
+            class="leg-pill"
+            [class.active]="navTargetMode() === 'CUSTOMER'"
+            (click)="switchNavigationTarget('CUSTOMER')"
+          >
+            📍 ဝယ်သူ ({{ detail.recipient.name }})
+          </button>
+        </div>
+      </header>
+
+      <!-- FULLSCREEN INTERACTIVE LEAFLET MAP -->
+      <div class="full-nav-map-wrap">
+        <div #fullNavMapContainer class="full-nav-leaflet"></div>
+
+        <!-- Floating Re-Center on Rider Motorcycle Button -->
+        <button
+          type="button"
+          class="floating-recenter-btn"
+          [class.active]="followRiderOnNav()"
+          (click)="recenterOnRiderInFullNav()"
+        >
+          🎯 ဆိုင်ကယ်နောက် လိုက်ကြည့်မည်
+        </button>
+      </div>
+
+      <!-- BOTTOM QUICK ACTION BAR INSIDE NAVIGATION -->
+      <footer class="nav-bottom-bar">
+        <div class="nav-dest-summary">
+          <small>လက်ရှိဦးတည်ရာ လိပ်စာ</small>
+          <strong>{{ navTargetSubtitle() }}</strong>
+        </div>
+
+        <div class="nav-bottom-actions">
+          <a [href]="'tel:' + detail.recipient.phone" class="nav-call-btn">
+            📞 ဝယ်သူဖုန်းခေါ်ရန်
+          </a>
+          @if (detail.status !== 'DELIVERED') {
+            <button
+              type="button"
+              class="nav-complete-btn"
+              [disabled]="isCompletingOrder()"
+              (click)="handleCompleteOrder(detail.orderId)"
+            >
+              ✓ ပို့ဆောင်ပြီးစီးသည်
+            </button>
+          }
+        </div>
+      </footer>
+
+    </div>
+  }
+
+  <!-- ==================== 8. NOTIFICATIONS SHEET ==================== -->
+  @if (isNotifDrawerOpen()) {
+    <div class="sheet-backdrop" (click)="toggleNotifDrawer()">
+      <div class="mobile-bottom-sheet" (click)="$event.stopPropagation()">
+        <div class="sheet-header">
+          <h3>🔔 အချက်ပေးချက်များ ({{ notifications().length }})</h3>
+          <button type="button" class="sheet-close-btn" (click)="toggleNotifDrawer()">✕</button>
+        </div>
+        <div class="sheet-body">
+          @if (notifications().length === 0) {
+            <p class="empty-text">အချက်ပေးချက်အသစ် မရှိသေးပါ။</p>
+          } @else {
+            @for (n of notifications(); track n.createdAt) {
+              <div class="notif-card" (click)="toggleNotifDrawer(); openTaskDetails(n.orderId)">
+                <strong>🚨 တာဝန်အသစ် (#{{ n.orderId | slice:-6 | uppercase }})</strong>
+                <p>{{ n.message }}</p>
+                <small>{{ n.createdAt | date:'MMM d, h:mm a' }}</small>
+              </div>
+            }
+          }
+        </div>
+      </div>
+    </div>
+  }
+</div>

@@ -1,3 +1,3 @@
 #!/bin/bash
 echo "Restoring MongoDB data from archive..."
-mongorestore --archive=/tmp/delivery_db.archive
+mongorestore --archive=/docker-entrypoint-initdb.d/delivery_db.archive

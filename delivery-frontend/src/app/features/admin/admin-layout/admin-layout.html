@@ -1,0 +1,265 @@
+<div class="admin-shell" [class.sidebar-collapsed]="isSidebarCollapsed()">
+
+  <!-- ==================== LEFT SIDEBAR ==================== -->
+  <aside class="admin-sidebar">
+    <!-- Brand Header -->
+    <div class="sidebar-brand">
+      <a routerLink="/admin/dashboard" class="brand-link" title="Magway Food Delivery Admin">
+        <div class="brand-logo-box">
+          <svg viewBox="0 0 24 24" fill="none" class="brand-svg">
+            <path d="M19 7h-3V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2H5a3 3 0 0 0-3 3v7a2 2 0 0 0 2 2h1.18a3 3 0 0 0 5.64 0h2.36a3 3 0 0 0 5.64 0H20a2 2 0 0 0 2-2v-4l-3-6z" fill="currentColor" fill-opacity="0.15"/>
+            <circle cx="7.5" cy="17.5" r="2.5" stroke="currentColor" stroke-width="2"/>
+            <circle cx="16.5" cy="17.5" r="2.5" stroke="currentColor" stroke-width="2"/>
+            <path d="M5 17.5H3.5a1.5 1.5 0 0 1-1.5-1.5v-3a2 2 0 0 1 2-2h6v6.5m0 0h4m2.5 0H20a2 2 0 0 0 2-2v-2.34a2 2 0 0 0-.4-1.2l-2.2-2.93A2 2 0 0 0 17.8 8H14v9.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M3 7h4M1 10h4" stroke="#f97316" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </div>
+
+        @if (!isSidebarCollapsed()) {
+          <div class="brand-text">
+            <div class="brand-title-row">
+              <span class="brand-title">Magway</span>
+              <span class="admin-pill">ADMIN</span>
+            </div>
+            <span class="brand-subtitle">Food Delivery</span>
+          </div>
+        }
+      </a>
+
+      <button
+        type="button"
+        class="collapse-btn"
+        (click)="toggleSidebar()"
+        [title]="isSidebarCollapsed() ? 'Expand Sidebar' : 'Collapse Sidebar'"
+      >
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2">
+          @if (isSidebarCollapsed()) {
+            <polyline points="9 18 15 12 9 6"></polyline>
+          } @else {
+            <polyline points="15 18 9 12 15 6"></polyline>
+          }
+        </svg>
+      </button>
+    </div>
+
+    <!-- Navigation Sections -->
+    <nav class="sidebar-nav">
+      <!-- SECTION: OPERATIONS -->
+      <div class="nav-section">
+        @if (!isSidebarCollapsed()) {
+          <span class="section-label">OPERATIONS</span>
+        }
+        @for (item of navItems; track item.route) {
+          @if (item.section === 'MAIN') {
+            <a
+              [routerLink]="item.route"
+              routerLinkActive="active"
+              [routerLinkActiveOptions]="{ exact: !!item.exact }"
+              class="nav-link"
+              [title]="isSidebarCollapsed() ? item.label : ''"
+            >
+              <span class="nav-icon">
+                @switch (item.icon) {
+                  @case ('dashboard') {
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <rect x="3" y="3" width="7" height="9" rx="1.5"></rect>
+                      <rect x="14" y="3" width="7" height="5" rx="1.5"></rect>
+                      <rect x="14" y="12" width="7" height="9" rx="1.5"></rect>
+                      <rect x="3" y="16" width="7" height="5" rx="1.5"></rect>
+                    </svg>
+                  }
+                  @case ('orders') {
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+                      <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+                      <path d="M9 14l2 2 4-4"></path>
+                    </svg>
+                  }
+                }
+              </span>
+              @if (!isSidebarCollapsed()) {
+                <span class="nav-label">{{ item.label }}</span>
+                @if (item.icon === 'orders') {
+                  <span class="live-dot" title="WebSocket Live Stream"></span>
+                }
+              }
+            </a>
+          }
+        }
+      </div>
+
+      <!-- SECTION: DIRECTORY & FLEET -->
+      <div class="nav-section">
+        @if (!isSidebarCollapsed()) {
+          <span class="section-label">MANAGEMENT</span>
+        }
+        @for (item of navItems; track item.route) {
+          @if (item.section === 'MANAGEMENT') {
+            <a
+              [routerLink]="item.route"
+              routerLinkActive="active"
+              class="nav-link"
+              [title]="isSidebarCollapsed() ? item.label : ''"
+            >
+              <span class="nav-icon">
+                @switch (item.icon) {
+                  @case ('restaurants') {
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                      <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                    </svg>
+                  }
+                  @case ('riders') {
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <circle cx="5.5" cy="17.5" r="3.5"></circle>
+                      <circle cx="18.5" cy="17.5" r="3.5"></circle>
+                      <path d="M15 6a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm-3 11.5V14l-3-3 4-3 2 3h2"></path>
+                    </svg>
+                  }
+                  @case ('customers') {
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                      <circle cx="9" cy="7" r="4"></circle>
+                      <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                      <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                    </svg>
+                  }
+                }
+              </span>
+              @if (!isSidebarCollapsed()) {
+                <span class="nav-label">{{ item.label }}</span>
+              }
+            </a>
+          }
+        }
+      </div>
+
+      <!-- SECTION: SYSTEM CONFIGURATION -->
+      <div class="nav-section">
+        @if (!isSidebarCollapsed()) {
+          <span class="section-label">SYSTEM</span>
+        }
+        @for (item of navItems; track item.route) {
+          @if (item.section === 'SYSTEM') {
+            <a
+              [routerLink]="item.route"
+              routerLinkActive="active"
+              class="nav-link"
+              [title]="isSidebarCollapsed() ? item.label : ''"
+            >
+              <span class="nav-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="3"></circle>
+                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                </svg>
+              </span>
+              @if (!isSidebarCollapsed()) {
+                <span class="nav-label">{{ item.label }}</span>
+              }
+            </a>
+          }
+        }
+      </div>
+    </nav>
+
+    <!-- Bottom Quick Switch to Customer Storefront -->
+    <div class="sidebar-footer">
+      <a routerLink="/customer" class="storefront-link" [title]="isSidebarCollapsed() ? 'Open Customer App' : ''">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+          <polyline points="15 3 21 3 21 9"></polyline>
+          <line x1="10" y1="14" x2="21" y2="3"></line>
+        </svg>
+        @if (!isSidebarCollapsed()) {
+          <span>Customer Storefront</span>
+        }
+      </a>
+    </div>
+  </aside>
+
+  <!-- ==================== MAIN WORKSPACE ==================== -->
+  <div class="admin-main">
+
+    <!-- Top Sticky Header -->
+    <header class="admin-topbar">
+      <div class="topbar-left">
+        <h1 class="page-title">{{ activePageMeta().title }}</h1>
+        <p class="page-subtitle">{{ activePageMeta().subtitle }}</p>
+      </div>
+
+      <div class="topbar-right">
+        <!-- WebSocket Real-Time Status Pill -->
+        <div class="ws-status-pill" [class.connected]="isWsConnected()" [class.disconnected]="!isWsConnected()">
+          <span class="status-pulse"></span>
+          <span class="status-text">
+            {{ isWsConnected() ? 'WebSocket Live' : 'Reconnecting...' }}
+          </span>
+        </div>
+
+        <!-- Global Refresh Button -->
+        <button
+          type="button"
+          class="refresh-btn"
+          [class.spinning]="isRefreshing()"
+          (click)="triggerGlobalRefresh()"
+          title="Sync latest data from server"
+        >
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2">
+            <polyline points="23 4 23 10 17 10"></polyline>
+            <polyline points="1 20 1 14 7 14"></polyline>
+            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+          </svg>
+          <span>Refresh</span>
+        </button>
+
+        <div class="topbar-divider"></div>
+
+        <!-- Admin User Profile Dropdown -->
+        <div class="admin-profile-wrapper">
+          <button type="button" class="profile-trigger" (click)="toggleProfileMenu($event)">
+            <img
+              [src]="getAvatarUrl(adminUser()?.img)"
+              alt="Admin Avatar"
+              class="admin-avatar"
+            />
+            <div class="admin-meta">
+              <span class="admin-name">{{ adminUser()?.name || 'System Admin' }}</span>
+              <span class="admin-role">{{ adminUser()?.role || 'ADMIN' }}</span>
+            </div>
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" class="chevron">
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+          </button>
+
+          @if (isProfileMenuOpen()) {
+            <div class="profile-dropdown" (click)="$event.stopPropagation()">
+              <div class="dropdown-header">
+                <strong>{{ adminUser()?.name || 'Administrator' }}</strong>
+                <span>Magway Operations Control</span>
+              </div>
+              <a routerLink="/admin/config" class="dropdown-item" (click)="isProfileMenuOpen.set(false)">
+                <span>⚙️</span>
+                <span>Pricing Config</span>
+              </a>
+              <a routerLink="/customer/profile" class="dropdown-item" (click)="isProfileMenuOpen.set(false)">
+                <span>👤</span>
+                <span>Account Settings</span>
+              </a>
+              <div class="dropdown-divider"></div>
+              <button type="button" class="dropdown-item danger" (click)="logout()">
+                <span>🚪</span>
+                <span>Sign Out</span>
+              </button>
+            </div>
+          }
+        </div>
+      </div>
+    </header>
+
+    <!-- Routed Admin Views Load Here -->
+    <main class="admin-content">
+      <router-outlet></router-outlet>
+    </main>
+
+  </div>
+</div>

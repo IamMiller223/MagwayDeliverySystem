@@ -1,0 +1,1088 @@
+.myanmar-font {
+  font-family: 'Pyidaungsu', 'Noto Sans Myanmar', 'Myanmar Text', 'Padauk', sans-serif;
+  line-height: 1.6;
+}
+
+.rf-workspace {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  height: calc(100vh - 130px);
+  min-height: 700px;
+}
+
+/* ==================== 1. TOP KPI & ACTION BAR ==================== */
+.rf-topbar {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 14px 22px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.03);
+}
+
+.rf-kpi-strip {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  color: #475569;
+  font-size: 0.84rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.status-pill.active {
+  background: #0f172a;
+  color: #ffffff;
+  border-color: #0f172a;
+}
+
+.status-pill.green.active {
+  background: #ecfdf5;
+  color: #047857;
+  border-color: #6ee7b7;
+}
+
+.status-pill.orange.active {
+  background: #fff7ed;
+  color: #c2410c;
+  border-color: #fdba74;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+.dot.green { background: #10b981; }
+.dot.orange { background: #ea580c; }
+
+.count-badge {
+  background: rgba(15, 23, 42, 0.08);
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+}
+
+.rf-top-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.radar-open-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: 10px;
+  border: 1px solid #bfdbfe;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-size: 0.84rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.radar-open-btn:hover {
+  background: #dbeafe;
+}
+
+.pulse-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #94a3b8;
+}
+
+.pulse-dot.online {
+  background: #10b981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.25);
+}
+
+.register-rider-btn {
+  padding: 10px 18px;
+  border-radius: 10px;
+  border: none;
+  background: linear-gradient(135deg, #ea580c 0%, #2563eb 100%);
+  color: #ffffff;
+  font-size: 0.86rem;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+}
+
+/* ==================== 2. MASTER-DETAIL SPLIT GRID ==================== */
+.rf-split-grid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 370px 1fr;
+  gap: 20px;
+  min-height: 0;
+}
+
+.rf-master-panel,
+.rf-detail-panel {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.03);
+}
+
+.panel-header {
+  padding: 16px 18px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.panel-header h3 {
+  margin: 0;
+  font-size: 0.98rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.panel-header span {
+  font-size: 0.76rem;
+  color: #64748b;
+}
+
+.search-bar-box {
+  padding: 12px 16px;
+  background: #f8fafc;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.search-bar-box input {
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: 9px;
+  border: 1px solid #cbd5e1;
+  font-size: 0.84rem;
+}
+
+.rider-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.rider-list-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.rider-list-card:hover {
+  background: #f8fafc;
+}
+
+.rider-list-card.selected {
+  border-color: #2563eb;
+  background: #eff6ff;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.12);
+}
+
+.rider-initial {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #1e293b 0%, #3b82f6 100%);
+  color: #ffffff;
+  font-weight: 800;
+  font-size: 1.05rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.rider-card-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.r-row-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
+}
+
+.r-row-top strong {
+  font-size: 0.9rem;
+  color: #0f172a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.r-status-chip {
+  font-size: 0.68rem;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.r-status-chip.avail {
+  background: #ecfdf5;
+  color: #059669;
+  border: 1px solid #a7f3d0;
+}
+
+.r-status-chip.busy {
+  background: #fff7ed;
+  color: #ea580c;
+  border: 1px solid #fed7aa;
+}
+
+.r-phone {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #2563eb;
+}
+
+.r-meta-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 2px;
+}
+
+.r-id {
+  font-family: monospace;
+  font-size: 0.72rem;
+  color: #94a3b8;
+}
+
+.gps-live-tag {
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: #2563eb;
+  background: #eff6ff;
+  padding: 2px 7px;
+  border-radius: 6px;
+  border: 1px solid #bfdbfe;
+  cursor: pointer;
+}
+
+.gps-live-tag:hover {
+  background: #2563eb;
+  color: #ffffff;
+}
+
+.del-icon-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.del-icon-btn:hover {
+  background: #fef2f2;
+  color: #dc2626;
+  border-color: #fecaca;
+}
+
+/* ==================== RIGHT DETAIL WORKSPACE ==================== */
+.profile-hero-banner {
+  padding: 22px 26px;
+  background: linear-gradient(135deg, #f8fafc 0%, #eff6ff 100%);
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.hero-left {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.hero-avatar-img,
+.hero-avatar-placeholder {
+  width: 72px;
+  height: 72px;
+  border-radius: 18px;
+  object-fit: cover;
+  border: 3px solid #ffffff;
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.1);
+  flex-shrink: 0;
+}
+
+.hero-avatar-placeholder {
+  background: linear-gradient(135deg, #ea580c 0%, #2563eb 100%);
+  color: #ffffff;
+  font-size: 1.75rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hero-name-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.hero-name-row h2 {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.role-badge {
+  background: #0f172a;
+  color: #ffffff;
+  font-size: 0.7rem;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 6px;
+}
+
+.hero-contacts {
+  margin: 6px 0;
+  font-size: 0.85rem;
+  color: #334155;
+  display: flex;
+  gap: 10px;
+}
+
+.uuid-tag {
+  font-size: 0.74rem;
+  color: #64748b;
+  background: rgba(255, 255, 255, 0.85);
+  padding: 2px 8px;
+  border-radius: 6px;
+}
+
+.hero-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.btn-track {
+  padding: 9px 16px;
+  border-radius: 10px;
+  border: none;
+  background: #2563eb;
+  color: #ffffff;
+  font-weight: 800;
+  font-size: 0.82rem;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+}
+
+.btn-track:hover {
+  background: #1d4ed8;
+}
+
+.btn-outline {
+  padding: 9px 14px;
+  border-radius: 10px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  font-weight: 700;
+  font-size: 0.82rem;
+  color: #0f172a;
+  cursor: pointer;
+}
+
+.btn-danger {
+  padding: 9px 14px;
+  border-radius: 10px;
+  border: 1px solid #fecaca;
+  background: #fef2f2;
+  color: #dc2626;
+  font-weight: 700;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+
+/* Detail Cards Grid */
+.detail-cards-grid {
+  padding: 24px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  overflow-y: auto;
+  flex: 1;
+  align-content: start;
+}
+
+.info-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.03);
+}
+
+.card-top-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.card-eyebrow {
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: #ea580c;
+  letter-spacing: 0.06em;
+  display: block;
+}
+
+.card-top-row h3 {
+  margin: 4px 0 0;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.mini-edit-btn {
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  background: #f8fafc;
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: #334155;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.mini-edit-btn.primary {
+  background: #eff6ff;
+  color: #2563eb;
+  border-color: #bfdbfe;
+}
+
+/* Styled Myanmar NRC Badge Box */
+.mm-nrc-badge-box {
+  background: linear-gradient(135deg, #fff1f2 0%, #fff7ed 100%);
+  border: 1px solid #fecdd3;
+  border-radius: 14px;
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.nrc-label-mm {
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: #be123c;
+}
+
+.nrc-number-display {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: #881337;
+  letter-spacing: 0.03em;
+}
+
+/* Realistic Myanmar Licence Plate Box */
+.mm-licence-plate-frame {
+  background: #0f172a;
+  border: 3px solid #334155;
+  border-radius: 14px;
+  padding: 16px 20px;
+  text-align: center;
+  color: #ffffff;
+  box-shadow: inset 0 0 0 2px #f8fafc;
+}
+
+.plate-header {
+  display: block;
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: #fbbf24;
+  letter-spacing: 0.14em;
+  margin-bottom: 4px;
+}
+
+.plate-number {
+  font-size: 1.55rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: #ffffff;
+}
+
+.card-meta-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.meta-line {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.85rem;
+  padding-bottom: 10px;
+  border-bottom: 1px dashed #e2e8f0;
+  color: #475569;
+}
+
+.phone-link {
+  color: #2563eb;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.gps-inline-active {
+  color: #059669;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.gps-inline-offline {
+  color: #94a3b8;
+}
+
+.v-type-pill {
+  background: #eff6ff;
+  color: #1d4ed8;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-weight: 800;
+  font-size: 0.78rem;
+}
+
+.empty-vehicle-box {
+  padding: 24px;
+  border-radius: 12px;
+  border: 1px dashed #cbd5e1;
+  background: #f8fafc;
+  text-align: center;
+  color: #64748b;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+/* ==================== 3. DEDICATED LIVE RIDER TRACKING MAP MODAL ==================== */
+.radar-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(4px);
+  z-index: 300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 28px;
+}
+
+.radar-modal-dialog {
+  width: 1080px;
+  max-width: 95vw;
+  height: 82vh;
+  background: #ffffff;
+  border-radius: 20px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.45);
+}
+
+.radar-modal-header {
+  padding: 18px 24px;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+.radar-title-block h3 {
+  margin: 4px 0;
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.radar-sub-coords {
+  margin: 0;
+  font-size: 0.82rem;
+  color: #059669;
+}
+
+.radar-sub-waiting {
+  margin: 0;
+  font-size: 0.82rem;
+  color: #64748b;
+}
+
+.radar-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.map-ctrl-btn {
+  padding: 8px 14px;
+  border-radius: 10px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #334155;
+  cursor: pointer;
+}
+
+.map-ctrl-btn.primary {
+  background: #2563eb;
+  color: #ffffff;
+  border-color: #2563eb;
+}
+
+.radar-map-body {
+  flex: 1;
+  position: relative;
+  min-height: 0;
+}
+
+.radar-leaflet-canvas {
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+
+.radar-modal-footer {
+  padding: 12px 24px;
+  background: #f8fafc;
+  border-top: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  overflow-x: auto;
+}
+
+.footer-label {
+  font-size: 0.74rem;
+  font-weight: 800;
+  color: #64748b;
+  white-space: nowrap;
+}
+
+.footer-empty {
+  font-size: 0.8rem;
+  color: #94a3b8;
+}
+
+.online-rider-pills {
+  display: flex;
+  gap: 8px;
+}
+
+.online-rider-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #0f172a;
+  cursor: pointer;
+}
+
+.online-rider-pill.active {
+  background: #2563eb;
+  color: #ffffff;
+  border-color: #2563eb;
+}
+
+.mini-status {
+  font-size: 0.68rem;
+  opacity: 0.85;
+}
+
+/* ==================== 4. SLIDE-OVER DRAWERS & NRC BUILDER ==================== */
+.drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.48);
+  backdrop-filter: blur(3px);
+  z-index: 250;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.fleet-drawer {
+  width: 480px;
+  max-width: 95vw;
+  background: #ffffff;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  box-shadow: -10px 0 30px rgba(15, 23, 42, 0.15);
+}
+
+.fleet-drawer.wide {
+  width: 620px;
+}
+
+.drawer-header {
+  padding: 20px 24px;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.drawer-header h3 {
+  margin: 4px 0 0;
+  font-size: 1.15rem;
+}
+
+.close-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  cursor: pointer;
+}
+
+.drawer-body {
+  flex: 1;
+  padding: 20px 24px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-group label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #334155;
+}
+
+.form-group input,
+.form-group select {
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid #cbd5e1;
+  font-size: 0.9rem;
+}
+
+.plate-input-large {
+  font-size: 1.1rem !important;
+  font-weight: 700;
+}
+
+/* Interactive NRC Builder Box */
+.nrc-builder-card,
+.vehicle-onboarding-box {
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: 14px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.builder-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.builder-head h4,
+.vehicle-onboarding-box h4 {
+  margin: 0;
+  font-size: 0.92rem;
+  color: #0f172a;
+}
+
+.builder-head p {
+  margin: 3px 0 0;
+  font-size: 0.76rem;
+  color: #64748b;
+}
+
+.mode-switch {
+  display: flex;
+  background: #e2e8f0;
+  padding: 3px;
+  border-radius: 8px;
+}
+
+.mode-switch button {
+  border: none;
+  background: transparent;
+  padding: 5px 10px;
+  border-radius: 6px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.mode-switch button.active {
+  background: #ffffff;
+  color: #0f172a;
+}
+
+.nrc-selectors-grid {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr 1.1fr 1.1fr;
+  gap: 10px;
+}
+
+.custom-township-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 0.78rem;
+  color: #475569;
+}
+
+.custom-township-row input {
+  width: 180px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+}
+
+.nrc-live-preview {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+}
+
+.nrc-live-preview.valid {
+  border-color: #10b981;
+  background: #ecfdf5;
+}
+
+.nrc-live-preview.invalid {
+  border-color: #f59e0b;
+  background: #fffbeb;
+}
+
+.preview-caption {
+  display: block;
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: #64748b;
+}
+
+.preview-value {
+  font-size: 1.1rem;
+  color: #0f172a;
+}
+
+.validation-chip {
+  font-size: 0.75rem;
+  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.06);
+}
+
+.plate-presets-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+.prefix-chip {
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.prefix-chip:hover {
+  border-color: #2563eb;
+  color: #2563eb;
+}
+
+.plate-valid-tag {
+  margin-left: auto;
+  font-weight: 700;
+  color: #d97706;
+}
+
+.plate-valid-tag.ok {
+  color: #059669;
+}
+
+.upload-flex {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.preview-img,
+.preview-placeholder {
+  width: 60px;
+  height: 60px;
+  border-radius: 12px;
+  object-fit: cover;
+  border: 1px solid #cbd5e1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f8fafc;
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.upload-right {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.upload-btn-label {
+  display: inline-block;
+  padding: 7px 12px;
+  border-radius: 8px;
+  background: #eff6ff;
+  color: #2563eb;
+  border: 1px solid #bfdbfe;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  text-align: center;
+}
+
+.drawer-footer {
+  padding: 16px 24px;
+  border-top: 1px solid #e2e8f0;
+  display: flex;
+  gap: 12px;
+}
+
+.btn-cancel {
+  flex: 1;
+  padding: 11px;
+  border-radius: 10px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btn-save {
+  flex: 2;
+  padding: 11px;
+  border-radius: 10px;
+  border: none;
+  background: #059669;
+  color: #ffffff;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.btn-save:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ==================== EMPTY & LOADING STATES ==================== */
+.empty-box {
+  padding: 40px 20px;
+  text-align: center;
+  color: #64748b;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.empty-box.full {
+  flex: 1;
+}
+
+.spinner {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 3px solid #e2e8f0;
+  border-top-color: #ea580c;
+  animation: spin 0.75s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}

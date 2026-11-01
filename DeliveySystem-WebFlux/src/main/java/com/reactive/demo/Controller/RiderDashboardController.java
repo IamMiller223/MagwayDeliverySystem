@@ -43,7 +43,7 @@ public class RiderDashboardController {
         return dashboardService.getJobDetails(orderId);
     }
     
-    @PutMapping("/{riderId}/order/{orderId}/complete")
+    @PutMapping("/{riderId}/orders/{orderId}/complete")
     public Mono<OrderResponseDto> completeDelivery(
             @PathVariable String riderId, 
             @PathVariable String orderId) {

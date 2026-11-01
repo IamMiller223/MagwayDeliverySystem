@@ -1,0 +1,58 @@
+<div class="browse-container">
+  <div class="search-header">
+    <h2>Browse Restaurants</h2>
+    <div class="search-bar">
+      <span class="search-icon">🔍</span>
+      <input
+        type="text"
+        placeholder="Search for restaurants (e.g., 3K, Spicy House)..."
+        [ngModel]="searchQuery()"
+        (ngModelChange)="onSearchInput($event)"
+      />
+      @if (searchQuery()) {
+        <button class="clear-btn" (click)="clearSearch()">✕</button>
+      }
+    </div>
+  </div>
+
+  @if (isLoading()) {
+    <div class="status-message">Searching restaurants...</div>
+  } @else if (errorMessage()) {
+    <div class="error-banner">{{ errorMessage() }}</div>
+  } @else if (hasSearched() && restaurants().length === 0) {
+    <div class="empty-state">
+      <div class="empty-icon">🍽️</div>
+      <h3>No restaurants found</h3>
+      <p>We couldn't find any matches for "{{ searchQuery() }}"</p>
+    </div>
+  } @else if (!hasSearched()) {
+    <div class="empty-state">
+      <div class="empty-icon">🔎</div>
+      <h3>Find your favorite food</h3>
+      <p>Type a restaurant name above to start searching</p>
+    </div>
+  } @else {
+    <div class="restaurant-grid">
+      @for (restaurant of restaurants(); track restaurant.restaurantId) {
+        <div class="restaurant-card" [routerLink]="['/customer/restaurant', restaurant.restaurantId]">
+          <div class="image-wrapper">
+            <img
+              [src]="getImageUrl(restaurant.image)"
+              [alt]="restaurant.name"
+              (error)="img.src='assets/placeholder-food.jpg'"
+              #img
+            />
+          </div>
+          <div class="info-wrapper">
+            <h3>{{ restaurant.name }}</h3>
+            <p class="address">📍 {{ restaurant.address }}</p>
+            <div class="card-footer">
+              <span class="phone">📞 {{ restaurant.phone }}</span>
+              <button class="view-btn">View Menu</button>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>

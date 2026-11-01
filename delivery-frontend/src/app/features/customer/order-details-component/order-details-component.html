@@ -1,0 +1,73 @@
+<div class="details-wrapper">
+
+  <button class="back-btn" (click)="goBack()">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="19" y1="12" x2="5" y2="12"></line>
+      <polyline points="12 19 5 12 12 5"></polyline>
+    </svg>
+    Back to Orders
+  </button>
+
+  @if (isLoading()) {
+    <div class="loading-state">Loading order details...</div>
+  }
+
+  @if (!isLoading() && orderDetails()) {
+    <div class="details-card">
+      <!-- Header -->
+      <div class="details-header">
+        <div>
+          <h2>Order #{{ orderDetails()!.orderId.substring(0, 8) | uppercase }}</h2>
+          <p class="full-id">ID: {{ orderDetails()!.orderId }}</p>
+        </div>
+        <span class="status-badge" [ngClass]="getStatusClass(orderDetails()!.status)">
+          {{ orderDetails()!.status }}
+        </span>
+      </div>
+
+      <!-- Info Grid -->
+      <div class="info-grid">
+        <div class="info-group">
+          <strong>Delivery Address</strong>
+          <p>{{ orderDetails()!.deliveryAddress }}</p>
+        </div>
+        <div class="info-group">
+          <strong>Rider Status</strong>
+          <p>{{ orderDetails()!.riderId ? 'Assigned' : 'Waiting for rider assignment' }}</p>
+        </div>
+      </div>
+
+      <hr>
+
+      <!-- Items List -->
+      <h3>Order Items</h3>
+      <div class="items-list">
+        @for (item of orderDetails()!.items; track item.restaurantId + item.name) {
+          <div class="item-row">
+            <div class="item-visuals">
+              <img
+                [src]="getImageUrl(item.image)"
+                [alt]="item.name"
+                class="item-image"
+                onerror="this.onerror=null; this.src='assets/placeholder-food.jpg';"
+              >
+              <div class="item-info">
+                <span class="item-name">{{ item.name }}</span>
+                <span class="item-qty">Qty: {{ item.quantity }}</span>
+              </div>
+            </div>
+            <span class="item-price">MMK {{ item.priceAtPurchase * item.quantity | number }}</span>
+          </div>
+        }
+      </div>
+
+      <hr>
+
+      <!-- Footer -->
+      <div class="details-footer">
+        <span>Total Amount Paid</span>
+        <span class="total-price">MMK {{ orderDetails()!.totalAmount | number }}</span>
+      </div>
+    </div>
+  }
+</div>

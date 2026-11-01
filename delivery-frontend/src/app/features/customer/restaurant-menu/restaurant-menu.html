@@ -1,0 +1,76 @@
+<div class="menu-container">
+  @if (isLoading()) {
+    <div class="loading-state">Loading delicious food...</div>
+  } @else if (errorMessage()) {
+    <div class="error-banner">{{ errorMessage() }}</div>
+  } @else if (menuData()) {
+
+    <!-- Restaurant Cover Banner -->
+    <div class="restaurant-banner">
+      <!-- 1. Use getImageUrl with a custom fallback for the restaurant banner -->
+      <img
+        [src]="getImageUrl(menuData()?.restaurantImg, 'assets/placeholder-restaurant.jpg')"
+        alt="Restaurant Cover"
+        (error)="bannerImg.src='assets/placeholder-restaurant.jpg'"
+        #bannerImg
+      />
+    </div>
+
+    <div class="menu-content">
+      <div class="menu-header">
+        <h2>Menu Options</h2>
+      </div>
+
+      <!-- Food Items Grid -->
+      <div class="menu-grid">
+        @for (item of menuData()?.menuItems; track item.id) {
+          <div class="menu-card" [class.unavailable]="!item.isAvailable">
+
+            <div class="item-image">
+              <!-- 2. Use getImageUrl with the default food fallback -->
+              <img
+                [src]="getImageUrl(item.image)"
+                [alt]="item.name"
+                (error)="foodImg.src='assets/placeholder-food.jpg'"
+                #foodImg
+              />
+            </div>
+
+            <div class="item-details">
+              <div>
+                <div class="item-header">
+                  <h3>{{ item.name }}</h3>
+                </div>
+                <p class="description">{{ item.description || 'Delicious freshly made ' + item.category }}</p>
+              </div>
+
+              <div class="item-actions">
+                <span class="price">{{ item.price | currency:'MMK':'symbol':'1.0-0' }}</span>
+                @if (item.isAvailable) {
+                  <button class="add-btn" (click)="addToCart(item)">+ Add</button>
+                } @else {
+                  <span class="sold-out">Sold Out</span>
+                }
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+
+      <!-- Infinite Scroll & End of List Indicators -->
+      @if (isFetchingMore()) {
+        <div class="fetch-more-loader">
+          <div class="spinner"></div>
+          <span>Loading more items...</span>
+        </div>
+      } @else if (!hasMoreData() && menuData()?.menuItems?.length) {
+        <div class="end-of-menu">
+          <span>🎉 You've reached the end of the menu!</span>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- The Invisible Tripwire -->
+  <div #scrollSentinel class="scroll-sentinel"></div>
+</div>

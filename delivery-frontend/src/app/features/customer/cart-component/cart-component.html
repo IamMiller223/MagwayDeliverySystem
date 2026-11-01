@@ -1,0 +1,61 @@
+<div class="cart-container">
+  <div class="cart-header">
+    <h2>Your Cart</h2>
+  </div>
+
+  @if (cartService.cartItems().length === 0) {
+    <div class="empty-cart">
+      <div class="empty-icon">🛒</div>
+      <h3>Your cart is empty</h3>
+      <p>Looks like you haven't added any delicious food yet.</p>
+      <a routerLink="/customer" class="browse-btn">Start Browsing</a>
+    </div>
+  } @else {
+    <div class="cart-content">
+      <!-- Item List -->
+      <div class="cart-items">
+        @for (item of cartService.cartItems(); track item.id) {
+          <div class="cart-item">
+            <!-- 3. Use the helper method here -->
+            <img
+              [src]="getImageUrl(item.image)"
+              [alt]="item.name"
+              (error)="img.src='assets/placeholder-food.jpg'"
+              #img
+            />
+
+            <div class="item-info">
+              <h4>{{ item.name }}</h4>
+              <span class="price">{{ item.price | currency:'MMK':'symbol':'1.0-0' }}</span>
+            </div>
+
+            <div class="quantity-controls">
+              <button class="qty-btn" (click)="decreaseQuantity(item)">-</button>
+              <span class="qty-number">{{ item.quantity }}</span>
+              <button class="qty-btn" (click)="increaseQuantity(item)">+</button>
+            </div>
+
+            <button class="remove-btn" (click)="removeItem(item.id)">🗑️</button>
+          </div>
+        }
+      </div>
+
+      <!-- Order Summary -->
+      <div class="cart-summary">
+        <h3>Order Summary</h3>
+
+        <div class="summary-row total">
+          <span>Subtotal ({{ cartService.totalItems() }} items)</span>
+          <span>{{ cartService.totalPrice() | currency:'MMK':'symbol':'1.0-0' }}</span>
+        </div>
+
+        <div class="delivery-note">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+          <p>Delivery fees and taxes will be calculated in the next step.</p>
+        </div>
+
+        <button class="checkout-btn" (click)="checkout()">Proceed to Checkout</button>
+      </div>
+    </div>
+  }
+</div>

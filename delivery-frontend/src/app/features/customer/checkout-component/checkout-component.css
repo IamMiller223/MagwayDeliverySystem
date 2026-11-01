@@ -1,0 +1,181 @@
+/* Container Layout */
+.checkout-wrapper {
+  max-width: 1100px;
+  margin: 2rem auto;
+  padding: 0 1rem;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  color: #333;
+}
+
+.checkout-header {
+  margin-bottom: 2rem;
+}
+
+.checkout-header h2 {
+  font-size: 1.75rem;
+  margin-bottom: 0.5rem;
+  color: #111827;
+}
+
+.checkout-header p {
+  color: #6b7280;
+  font-size: 1rem;
+}
+
+/* 2-Column Grid */
+.checkout-grid {
+  display: grid;
+  grid-template-columns: 3fr 2fr;
+  gap: 2rem;
+}
+
+/* Card Styles */
+.map-card, .details-card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.map-card {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Map Header Actions */
+.map-header-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.instruction-text {
+  font-size: 0.875rem;
+  color: #4b5563;
+  font-weight: 500;
+}
+
+/* Locate Me Button */
+.current-location-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: #ffffff;
+  border: 1px solid #d1d5db;
+  padding: 0.4rem 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #374151;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease;
+}
+
+.current-location-btn:hover {
+  background-color: #f9fafb;
+  border-color: #9ca3af;
+}
+
+.current-location-btn:active {
+  transform: scale(0.95);
+}
+
+.current-location-btn svg {
+  color: #2563eb;
+}
+
+/* Map Container */
+.map-container {
+  height: 450px;
+  width: 100%;
+  border-radius: 0.5rem;
+  z-index: 1; /* Keeps Leaflet controls properly stacked */
+}
+
+.coordinates-display {
+  text-align: right;
+  font-size: 0.75rem;
+  color: #9ca3af;
+  margin-top: 0.75rem;
+}
+
+/* Form Specifics */
+.details-card h3 {
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+  font-size: 1.25rem;
+  color: #1f2937;
+}
+
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+.form-group label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 0.5rem;
+}
+
+.form-group input,
+.form-group textarea {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  color: #1f2937;
+  background-color: #f9fafb;
+  box-sizing: border-box;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: #10b981;
+  background-color: #ffffff;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+}
+
+/* Button */
+.continue-btn {
+  width: 100%;
+  padding: 1rem;
+  background-color: #10b981;
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  font-size: 1.125rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+  margin-top: 1rem;
+}
+
+.continue-btn:hover {
+  background-color: #059669;
+}
+
+.continue-btn:active {
+  transform: scale(0.98);
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 900px) {
+  .checkout-grid {
+    grid-template-columns: 1fr; /* Stacks the Map on top of the Form on smaller screens */
+  }
+
+  .map-container {
+    height: 350px;
+  }
+}

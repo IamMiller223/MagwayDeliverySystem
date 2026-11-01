@@ -1,0 +1,76 @@
+<div class="restaurant-container">
+  <div class="header-section">
+    <h2>Popular Near You</h2>
+    <p>Discover the best food and drinks in Magway</p>
+
+    <!-- Merged Search Bar -->
+    <div class="search-bar">
+      <span class="search-icon">🔍</span>
+      <input
+        type="text"
+        placeholder="Search restaurants by name"
+        [ngModel]="searchQuery()"
+        (ngModelChange)="onSearchInput($event)"
+      />
+      @if (searchQuery()) {
+        <button class="clear-btn" (click)="clearSearch()">✕</button>
+      }
+    </div>
+  </div>
+
+  @if (isLoading()) {
+    <!-- Initial Loading State -->
+    <div class="loading-grid">
+      @for (i of [1, 2, 3, 4, 5, 6]; track i) {
+        <div class="skeleton-card">
+          <div class="skeleton-img"></div>
+          <div class="skeleton-text title"></div>
+          <div class="skeleton-text sub"></div>
+        </div>
+      }
+    </div>
+  } @else if (errorMessage()) {
+    <div class="error-banner">{{ errorMessage() }}</div>
+  } @else if (restaurants().length === 0) {
+    <!-- Empty Search State -->
+    <div class="empty-search">
+      <div class="empty-icon">🍽️</div>
+      <h3>No restaurants found</h3>
+      <p>We couldn't find any matches for "{{ searchQuery() }}"</p>
+      <button class="reset-btn" (click)="clearSearch()">Show All Restaurants</button>
+    </div>
+  } @else {
+    <!-- Restaurant Grid -->
+    <div class="restaurant-grid">
+      @for (restaurant of restaurants(); track restaurant.restaurantId) {
+        <div class="restaurant-card" [routerLink]="['/customer/restaurant', restaurant.restaurantId]">
+          <div class="image-wrapper">
+            <img
+              [src]="getImageUrl(restaurant.image)"
+              [alt]="restaurant.name"
+              (error)="img.src='assets/placeholder-food.jpg'"
+              #img
+            />
+          </div>
+          <div class="info-wrapper">
+            <h3>{{ restaurant.name }}</h3>
+            <p class="address">📍 {{ restaurant.address }}</p>
+            <div class="card-footer">
+              <span class="phone">📞 {{ restaurant.phone }}</span>
+              <button class="view-btn">View Menu</button>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+
+    <!-- Infinite Scroll Loading Indicator -->
+    @if (isFetchingMore()) {
+      <div class="fetch-more-loader">
+        <span>Loading more restaurants...</span>
+      </div>
+    }
+  }
+
+  <div #scrollSentinel class="scroll-sentinel"></div>
+</div>

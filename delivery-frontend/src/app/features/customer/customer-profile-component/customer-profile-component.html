@@ -1,0 +1,246 @@
+<div class="profile-page">
+  <!-- Hidden Native File Input for Image Upload -->
+  <input
+    #fileInput
+    type="file"
+    accept="image/*"
+    class="hidden-file-input"
+    (change)="onFileSelected($event)"
+  />
+
+  @if (isLoading()) {
+    <div class="profile-skeleton">
+      <div class="skeleton-header"></div>
+      <div class="skeleton-card"></div>
+      <div class="skeleton-card"></div>
+    </div>
+  } @else if (profile(); as user) {
+
+    <!-- Profile Hero Header with Avatar Upload -->
+    <div class="profile-hero-card">
+      <div class="avatar-wrapper" (click)="fileInput.click()" title="Tap to change profile picture">
+        <img
+          [src]="getAvatarUrl(user.image)"
+          [alt]="user.name"
+          class="profile-avatar"
+          (error)="onAvatarError($event)"
+        />
+        <!-- Camera Overlay Badge -->
+        <button type="button" class="camera-badge" aria-label="Upload new profile photo">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2">
+            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+            <circle cx="12" cy="13" r="4"></circle>
+          </svg>
+        </button>
+      </div>
+
+      <div class="hero-info">
+        <div class="name-badge-row">
+          <h1>{{ user.name }}</h1>
+          <span class="role-badge">{{ user.role }}</span>
+        </div>
+        <p class="hero-email">{{ user.email }}</p>
+
+        <div class="photo-actions">
+          <button type="button" class="change-photo-btn" (click)="fileInput.click()">
+            📷 {{ selectedFile() ? 'Choose Different Photo' : 'Change Photo' }}
+          </button>
+          @if (selectedFile()) {
+            <button type="button" class="undo-photo-btn" (click)="cancelPhotoSelection(fileInput)">
+              Undo
+            </button>
+          }
+        </div>
+      </div>
+    </div>
+
+    <!-- Feedback Banners -->
+    @if (successMessage()) {
+      <div class="banner banner-success">
+        <span>✅</span>
+        <span>{{ successMessage() }}</span>
+      </div>
+    }
+
+    @if (errorMessage()) {
+      <div class="banner banner-error">
+        <span>⚠️</span>
+        <span>{{ errorMessage() }}</span>
+      </div>
+    }
+
+    <!-- SECTION 1: Personal Information (Name & Phone) -->
+    <section class="profile-section-card">
+      <div class="section-header">
+        <div>
+          <h2>Personal Information</h2>
+          <p>Update your name or phone number</p>
+        </div>
+
+        @if (!editingFields().name || !editingFields().phone) {
+          <button type="button" class="edit-all-btn" (click)="enableAllEdits()">
+            Edit All
+          </button>
+        }
+      </div>
+
+      <form [formGroup]="profileForm" (ngSubmit)="saveChanges(fileInput)" class="field-rows-container" novalidate>
+
+        <!-- 1. FULL NAME ROW -->
+        <div class="field-row" [class.editing-active]="editingFields().name">
+          <div class="field-row-top">
+            <div class="info-left">
+              <div class="info-icon">👤</div>
+              <div class="info-content">
+                <span class="info-label">Full Name</span>
+                @if (!editingFields().name) {
+                  <span class="info-value">{{ user.name }}</span>
+                }
+              </div>
+            </div>
+
+            @if (!editingFields().name) {
+              <button type="button" class="row-edit-btn" (click)="enableFieldEdit('name')">
+                ✏️ Edit
+              </button>
+            } @else {
+              <button type="button" class="row-cancel-btn" (click)="cancelFieldEdit('name')">
+                ✕ Cancel
+              </button>
+            }
+          </div>
+
+          @if (editingFields().name) {
+            <div class="inline-input-box">
+              <input
+                type="text"
+                formControlName="name"
+                placeholder="Enter your full name"
+                [class.input-error]="isFieldInvalid('name')"
+              />
+              @if (isFieldInvalid('name')) {
+                <span class="field-error">Name must be at least 2 characters</span>
+              }
+            </div>
+          }
+        </div>
+
+        <!-- 2. PHONE NUMBER ROW -->
+        <div class="field-row" [class.editing-active]="editingFields().phone">
+          <div class="field-row-top">
+            <div class="info-left">
+              <div class="info-icon">📞</div>
+              <div class="info-content">
+                <span class="info-label">Phone Number</span>
+                @if (!editingFields().phone) {
+                  <span class="info-value">{{ user.phone || 'Not provided' }}</span>
+                }
+              </div>
+            </div>
+
+            @if (!editingFields().phone) {
+              <button type="button" class="row-edit-btn" (click)="enableFieldEdit('phone')">
+                ✏️ Edit
+              </button>
+            } @else {
+              <button type="button" class="row-cancel-btn" (click)="cancelFieldEdit('phone')">
+                ✕ Cancel
+              </button>
+            }
+          </div>
+
+          @if (editingFields().phone) {
+            <div class="inline-input-box">
+              <input
+                type="tel"
+                formControlName="phone"
+                placeholder="e.g., +959770223446"
+                [class.input-error]="isFieldInvalid('phone')"
+              />
+              @if (isFieldInvalid('phone')) {
+                <span class="field-error">Enter a valid phone number (7–15 digits)</span>
+              }
+            </div>
+          }
+        </div>
+
+        <!-- Sticky Save Bar (Shows when Photo, Name, or Phone is changed) -->
+        @if (hasActiveEdits()) {
+          <div class="save-bar">
+            <button
+              type="button"
+              class="btn-cancel-all"
+              (click)="cancelAllEdits(fileInput)"
+              [disabled]="isSaving()"
+            >
+              Cancel
+            </button>
+
+            <button
+              type="submit"
+              class="btn-save"
+              [disabled]="!areEditedFieldsValid() || isSaving()"
+            >
+              @if (isSaving()) {
+                <span class="spinner"></span>
+                <span>Saving...</span>
+              } @else {
+                <span>Save Changes</span>
+              }
+            </button>
+          </div>
+        }
+      </form>
+    </section>
+
+    <!-- SECTION 2: Multi-Step Security Settings (Redirect to Dedicated Pages) -->
+    <section class="profile-section-card">
+      <div class="section-header">
+        <div>
+          <h2>Account & Security</h2>
+          <p>Multi-step verification required to update these credentials</p>
+        </div>
+      </div>
+
+      <div class="security-nav-list">
+        <a routerLink="/customer/profile/update-email" class="security-nav-item">
+          <div class="info-left">
+            <div class="info-icon">✉️</div>
+            <div class="info-content">
+              <span class="info-label">Email Address</span>
+              <span class="info-value">{{ user.email }}</span>
+            </div>
+          </div>
+          <div class="security-right">
+            <span class="action-pill">Change</span>
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="9 18 15 12 9 6"></polyline>
+            </svg>
+          </div>
+        </a>
+
+        <a routerLink="/customer/profile/update-password" class="security-nav-item">
+          <div class="info-left">
+            <div class="info-icon">🔒</div>
+            <div class="info-content">
+              <span class="info-label">Password</span>
+              <span class="info-value">••••••••••••</span>
+            </div>
+          </div>
+          <div class="security-right">
+            <span class="action-pill">Update</span>
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="9 18 15 12 9 6"></polyline>
+            </svg>
+          </div>
+        </a>
+      </div>
+    </section>
+
+  } @else {
+    <div class="banner banner-error">
+      <span>⚠️</span>
+      <span>{{ errorMessage() || 'Unable to load profile.' }}</span>
+    </div>
+  }
+</div>

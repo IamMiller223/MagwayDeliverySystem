@@ -1,0 +1,21 @@
+ng generate service core/services/auth
+ng generate interceptor core/interceptors/token --functional
+ng generate guard core/guards/auth --functional
+ng generate guard core/guards/admin --functional
+ng generate class  core/models/ApiResponse --type=model
+ng generate class  core/models/RestaurantMenuData --type=model
+ng generate service core/services/RestaurantService
+ng generate service core/services/CartService
+ng generate component features/customer/CartComponent
+ng generate component features/customer/CheckoutPaymentComponent
+ng generate service core/services/OrderService
+ng generate component features/customer/OrderDetailsComponent
+ng serve --host 0.0.0.0 --ssl true
+ng generate service core/services/RiderService
+ng generate service core/services/UserService
+ng generate guard core/guards/rider --functional
+
+
+
+
+

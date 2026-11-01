@@ -1,0 +1,172 @@
+.orders-wrapper {
+  max-width: 800px;
+  margin: 2rem auto;
+  padding: 0 1rem;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+  color: #333;
+}
+
+.orders-header {
+  margin-bottom: 2rem;
+}
+
+.orders-header h2 {
+  font-size: 1.75rem;
+  margin-bottom: 0.5rem;
+  color: #111827;
+}
+
+.orders-header p {
+  color: #6b7280;
+}
+
+/* States */
+.loading-state, .empty-state {
+  text-align: center;
+  padding: 4rem 1rem;
+  background: #ffffff;
+  border-radius: 0.75rem;
+  border: 1px dashed #d1d5db;
+}
+
+.empty-state svg {
+  width: 64px;
+  height: 64px;
+  color: #9ca3af;
+  margin-bottom: 1rem;
+}
+
+.empty-state h3 {
+  font-size: 1.25rem;
+  color: #1f2937;
+  margin-bottom: 0.5rem;
+}
+
+.empty-state p {
+  color: #6b7280;
+  margin-bottom: 1.5rem;
+}
+
+.browse-btn {
+  display: inline-block;
+  background-color: #10b981;
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  text-decoration: none;
+  font-weight: 600;
+  transition: background-color 0.2s;
+}
+
+.browse-btn:hover {
+  background-color: #059669;
+}
+
+/* Order Cards */
+.orders-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.order-card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.order-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  border-color: #d1d5db;
+}
+
+.order-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.25rem 1.5rem;
+  background-color: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.order-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.order-id {
+  font-weight: 600;
+  color: #111827;
+}
+
+.order-date {
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.order-body {
+  padding: 1.5rem;
+}
+
+.restaurant-name {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 1rem;
+  font-weight: 500;
+  color: #374151;
+}
+
+.restaurant-name svg {
+  width: 20px;
+  height: 20px;
+  color: #6b7280;
+}
+
+.order-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.25rem 1.5rem;
+  background-color: #ffffff;
+  border-top: 1px solid #e5e7eb;
+}
+
+.total-label {
+  font-weight: 500;
+  color: #4b5563;
+}
+
+.total-amount {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #10b981;
+}
+
+/* Badges */
+.status-badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.status-pending { background-color: #fef3c7; color: #92400e; }
+.status-preparing { background-color: #dbeafe; color: #1e40af; }
+.status-completed { background-color: #d1fae5; color: #065f46; }
+.status-cancelled { background-color: #fee2e2; color: #991b1b; }
+
+@media (max-width: 600px) {
+  .order-card-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+}

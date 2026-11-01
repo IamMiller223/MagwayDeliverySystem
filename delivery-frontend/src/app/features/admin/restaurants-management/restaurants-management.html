@@ -1,0 +1,541 @@
+<div class="rm-workspace">
+
+  <!-- ==================== 1. TOP HEADER & ACTION BAR ==================== -->
+  <section class="rm-topbar">
+    <div class="rm-title-block">
+      <h2>Restaurants & Menus Management</h2>
+      <p>Create partner restaurants in Magway and manage their live menu catalogs</p>
+    </div>
+
+    <div class="rm-top-actions">
+      <button type="button" class="primary-create-btn" (click)="openCreateRestaurantDrawer()">
+        + Add New Restaurant
+      </button>
+    </div>
+  </section>
+
+  <!-- ==================== 2. MASTER-DETAIL SPLIT GRID ==================== -->
+  <div class="rm-split-grid">
+
+    <!-- LEFT PANEL: Restaurant Fleet Directory -->
+    <aside class="rm-master-panel">
+      <div class="panel-head">
+        <div>
+          <h3>Partner Restaurants ({{ filteredRestaurants().length }})</h3>
+          <span>Select a restaurant to manage its menu</span>
+        </div>
+      </div>
+
+      <div class="master-search-bar">
+        <input
+          type="text"
+          placeholder="Search name, phone, or ward..."
+          [ngModel]="restaurantSearch()"
+          (ngModelChange)="restaurantSearch.set($event)"
+        />
+      </div>
+
+      <div class="restaurant-list">
+        @if (isLoadingRestaurants()) {
+          <div class="empty-state">
+            <div class="spinner"></div>
+            <p>Loading Magway restaurants...</p>
+          </div>
+        } @else if (filteredRestaurants().length === 0) {
+          <div class="empty-state">
+            <p>No restaurants found.</p>
+            <button type="button" class="primary-create-btn" (click)="openCreateRestaurantDrawer()">
+              + Create First Restaurant
+            </button>
+          </div>
+        } @else {
+          @for (rest of filteredRestaurants(); track rest.restaurantId) {
+            <article
+              class="rest-card"
+              [class.active]="selectedRestaurant()?.restaurantId === rest.restaurantId"
+              (click)="selectRestaurant(rest)"
+            >
+              <img
+                [src]="resolveImageUrl(rest.image)"
+                [alt]="rest.name"
+                class="rest-thumb"
+                onerror="this.src='https://ui-avatars.com/api/?name=R&background=ffedd5&color=ea580c&bold=true'"
+              />
+
+              <div class="rest-card-body">
+                <div class="rest-card-top">
+                  <strong>{{ rest.name }}</strong>
+                  <span class="rest-id-tag">#{{ rest.restaurantId | slice:-6 | uppercase }}</span>
+                </div>
+                <span class="rest-phone">📞 {{ rest.phone }}</span>
+                <span class="rest-addr">📍 {{ rest.address }}</span>
+              </div>
+
+              <div class="rest-card-actions">
+                <button
+                  type="button"
+                  class="icon-btn"
+                  title="Edit Restaurant"
+                  (click)="openEditRestaurantDrawer(rest, $event)"
+                >
+                  ✎
+                </button>
+                <button
+                  type="button"
+                  class="icon-btn danger"
+                  title="Delete Restaurant"
+                  (click)="confirmDeleteRestaurant(rest, $event)"
+                >
+                  🗑
+                </button>
+              </div>
+            </article>
+          }
+        }
+      </div>
+
+      <!-- Restaurant List Pagination -->
+      <div class="panel-pagination">
+        <span>Page {{ restaurantPage() + 1 }}</span>
+        <div class="page-btns">
+          <button
+            type="button"
+            [disabled]="restaurantPage() === 0"
+            (click)="prevRestaurantPage()"
+          >
+            ← Prev
+          </button>
+          <button
+            type="button"
+            [disabled]="restaurants().length < restaurantPageSize()"
+            (click)="nextRestaurantPage()"
+          >
+            Next →
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- RIGHT PANEL: Selected Restaurant Workspace & Menu Items CRUD -->
+    <section class="rm-detail-panel">
+      @if (selectedRestaurant(); as selected) {
+        <!-- Selected Restaurant Banner -->
+        <div class="selected-rest-banner">
+          <div class="banner-left">
+            <img
+              [src]="resolveImageUrl(selected.image)"
+              [alt]="selected.name"
+              class="banner-logo"
+              onerror="this.src='https://ui-avatars.com/api/?name=R&background=ffedd5&color=ea580c&bold=true'"
+            />
+            <div class="banner-meta">
+              <div class="banner-headline">
+                <h2>{{ selected.name }}</h2>
+                <span class="id-pill">ID: {{ selected.restaurantId }}</span>
+              </div>
+              <p class="banner-sub">
+                <span>📞 {{ selected.phone }}</span>
+                <span>•</span>
+                <span>📍 {{ selected.address }}</span>
+                <span>•</span>
+                <span>📌 {{ selected.latitude }}, {{ selected.longitude }}</span>
+              </p>
+            </div>
+          </div>
+
+          <div class="banner-actions">
+            <button
+              type="button"
+              class="sec-btn"
+              (click)="openEditRestaurantDrawer(selected)"
+            >
+              ✎ Edit Info
+            </button>
+            <button
+              type="button"
+              class="primary-create-btn"
+              (click)="openCreateMenuDrawer()"
+            >
+              + Add Menu Item
+            </button>
+          </div>
+        </div>
+
+        <!-- Menu Filter & Search Toolbar -->
+        <div class="menu-toolbar">
+          <div class="category-pills">
+            @for (cat of availableCategories(); track cat) {
+              <button
+                type="button"
+                class="cat-pill"
+                [class.active]="selectedCategory() === cat"
+                (click)="selectedCategory.set(cat)"
+              >
+                {{ cat === 'ALL' ? 'All Categories' : cat }}
+              </button>
+            }
+          </div>
+
+          <div class="menu-Right-tools">
+            <span class="avail-stat">
+              <strong>{{ availableMenuCount() }}</strong> / {{ menuItems().length }} Available
+            </span>
+            <input
+              type="text"
+              class="menu-search"
+              placeholder="Search dish name..."
+              [ngModel]="menuSearch()"
+              (ngModelChange)="menuSearch.set($event)"
+            />
+          </div>
+        </div>
+
+        <!-- Menu Items Grid -->
+        <div class="menu-grid-container">
+          @if (isLoadingMenu()) {
+            <div class="empty-state">
+              <div class="spinner"></div>
+              <p>Loading menu items for {{ selected.name }}...</p>
+            </div>
+          } @else if (filteredMenuItems().length === 0) {
+            <div class="empty-state">
+              <h4>No Menu Items Found</h4>
+              <p>Add dishes, drinks, or desserts to {{ selected.name }}'s catalog.</p>
+              <button type="button" class="primary-create-btn" (click)="openCreateMenuDrawer()">
+                + Add First Dish
+              </button>
+            </div>
+          } @else {
+            <div class="menu-cards-grid">
+              @for (item of filteredMenuItems(); track item.id) {
+                <div class="menu-item-card" [class.unavailable]="!item.isAvailable">
+                  <div class="menu-img-box">
+                    <img
+                      [src]="resolveImageUrl(item.image)"
+                      [alt]="item.name"
+                      class="menu-img"
+                      onerror="this.src='https://ui-avatars.com/api/?name=Dish&background=f1f5f9&color=475569'"
+                    />
+                    <span class="category-chip">{{ item.category || 'food' }}</span>
+                  </div>
+
+                  <div class="menu-card-content">
+                    <div class="menu-row-top">
+                      <h4>{{ item.name }}</h4>
+                      <strong class="menu-price">MMK {{ item.price | number }}</strong>
+                    </div>
+
+                    <p class="menu-desc">
+                      {{ item.description || 'No description provided.' }}
+                    </p>
+
+                    <div class="menu-card-footer">
+                      <!-- Instant 1-Click Availability Toggle -->
+                      <button
+                        type="button"
+                        class="avail-toggle-btn"
+                        [class.online]="item.isAvailable"
+                        (click)="toggleMenuItemAvailability(item)"
+                      >
+                        <span class="toggle-dot"></span>
+                        <span>{{ item.isAvailable ? 'Available' : 'Sold Out' }}</span>
+                      </button>
+
+                      <div class="item-actions">
+                        <button
+                          type="button"
+                          class="item-btn"
+                          (click)="openEditMenuDrawer(item)"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          class="item-btn danger"
+                          (click)="confirmDeleteMenuItem(item)"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        </div>
+
+        <!-- Menu Pagination Footer -->
+        <div class="panel-pagination">
+          <span>Menu Page {{ menuPage() + 1 }} • Showing {{ filteredMenuItems().length }} items</span>
+          <div class="page-btns">
+            <button type="button" [disabled]="menuPage() === 0" (click)="prevMenuPage()">
+              ← Previous
+            </button>
+            <button
+              type="button"
+              [disabled]="menuItems().length < menuPageSize()"
+              (click)="nextMenuPage()"
+            >
+              Next →
+            </button>
+          </div>
+        </div>
+      } @else {
+        <div class="empty-state full-height">
+          <h3>Select a Restaurant on the Left</h3>
+          <p>Choose any restaurant from the directory or create a new one to manage its menu.</p>
+        </div>
+      }
+    </section>
+
+  </div>
+</div>
+
+<!-- ==================== 3. CREATE / EDIT RESTAURANT DRAWER ==================== -->
+@if (isRestaurantDrawerOpen()) {
+  <div class="drawer-backdrop" (click)="closeRestaurantDrawer()">
+    <aside class="crud-drawer wide" (click)="$event.stopPropagation()">
+      <div class="drawer-header">
+        <div>
+          <span class="eyebrow">RESTAURANT CONFIGURATION</span>
+          <h3>{{ isEditingRestaurant() ? 'Edit Restaurant' : 'Create New Restaurant' }}</h3>
+        </div>
+        <button type="button" class="close-btn" (click)="closeRestaurantDrawer()">✕</button>
+      </div>
+
+      <div class="drawer-body">
+        <!-- Image Upload Section (/api/images/upload) -->
+        <div class="form-group">
+          <label>Restaurant Cover / Logo Image</label>
+          <div class="upload-row">
+            @if (restFormImage()) {
+              <img
+                [src]="resolveImageUrl(restFormImage())"
+                alt="Preview"
+                class="upload-preview"
+              />
+            } @else {
+              <div class="upload-placeholder">🏪</div>
+            }
+
+            <div class="upload-controls">
+              <label class="file-upload-btn">
+                <input
+                  type="file"
+                  accept="image/*"
+                  (change)="onRestaurantFileSelected($event)"
+                  hidden
+                />
+                {{ isUploadingRestaurantImg() ? 'Uploading...' : '📤 Upload Image File' }}
+              </label>
+              <input
+                type="text"
+                class="filename-input"
+                placeholder="Or paste image filename..."
+                [ngModel]="restFormImage()"
+                (ngModelChange)="restFormImage.set($event)"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div class="form-row-2">
+          <div class="form-group">
+            <label>Restaurant Name *</label>
+            <input
+              type="text"
+              placeholder="e.g., Tira House"
+              [ngModel]="restFormName()"
+              (ngModelChange)="restFormName.set($event)"
+            />
+          </div>
+
+          <div class="form-group">
+            <label>Phone Number *</label>
+            <input
+              type="text"
+              placeholder="e.g., 09123456789"
+              [ngModel]="restFormPhone()"
+              (ngModelChange)="restFormPhone.set($event)"
+            />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Full Street Address (Magway) *</label>
+          <input
+            type="text"
+            placeholder="e.g., Strand Road, Magway"
+            [ngModel]="restFormAddress()"
+            (ngModelChange)="restFormAddress.set($event)"
+          />
+        </div>
+
+        <!-- Bounded Leaflet Map Picker -->
+        <div class="form-group">
+          <div class="map-label-row">
+            <label>Pin Location Inside Magway Delivery Zone *</label>
+            <span class="coords-tag">
+              Lat: {{ restFormLat() }} • Lng: {{ restFormLng() }}
+            </span>
+          </div>
+          <div #pickerMapContainer class="picker-map-canvas"></div>
+          <small class="map-hint">
+            Click anywhere inside the blue Magway boundary or drag the pin to set exact coordinates.
+          </small>
+        </div>
+      </div>
+
+      <div class="drawer-footer">
+        <button type="button" class="cancel-btn" (click)="closeRestaurantDrawer()">
+          Cancel
+        </button>
+        <button
+          type="button"
+          class="save-btn"
+          [disabled]="isSubmittingRestaurant() || isUploadingRestaurantImg()"
+          (click)="saveRestaurant()"
+        >
+          {{ isSubmittingRestaurant() ? 'Saving...' : (isEditingRestaurant() ? 'Update Restaurant' : 'Create Restaurant') }}
+        </button>
+      </div>
+    </aside>
+  </div>
+}
+
+<!-- ==================== 4. CREATE / EDIT MENU ITEM DRAWER ==================== -->
+@if (isMenuDrawerOpen() && selectedRestaurant(); as rest) {
+  <div class="drawer-backdrop" (click)="closeMenuDrawer()">
+    <aside class="crud-drawer" (click)="$event.stopPropagation()">
+      <div class="drawer-header">
+        <div>
+          <span class="eyebrow">{{ rest.name | uppercase }} MENU</span>
+          <h3>{{ isEditingMenu() ? 'Edit Menu Item' : 'Add New Menu Item' }}</h3>
+        </div>
+        <button type="button" class="close-btn" (click)="closeMenuDrawer()">✕</button>
+      </div>
+
+      <div class="drawer-body">
+        <!-- Menu Image Upload -->
+        <div class="form-group">
+          <label>Dish Photo</label>
+          <div class="upload-row">
+            @if (menuFormImage()) {
+              <img
+                [src]="resolveImageUrl(menuFormImage())"
+                alt="Dish Preview"
+                class="upload-preview"
+              />
+            } @else {
+              <div class="upload-placeholder">🍔</div>
+            }
+
+            <div class="upload-controls">
+              <label class="file-upload-btn">
+                <input
+                  type="file"
+                  accept="image/*"
+                  (change)="onMenuFileSelected($event)"
+                  hidden
+                />
+                {{ isUploadingMenuImg() ? 'Uploading...' : '📤 Upload Dish Photo' }}
+              </label>
+              <input
+                type="text"
+                class="filename-input"
+                placeholder="Uploaded filename..."
+                [ngModel]="menuFormImage()"
+                (ngModelChange)="menuFormImage.set($event)"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Dish Name *</label>
+          <input
+            type="text"
+            placeholder="e.g., Chicken Biryani"
+            [ngModel]="menuFormName()"
+            (ngModelChange)="menuFormName.set($event)"
+          />
+        </div>
+
+        <div class="form-row-2">
+          <div class="form-group">
+            <label>Price (MMK) *</label>
+            <input
+              type="number"
+              min="0"
+              step="100"
+              [ngModel]="menuFormPrice()"
+              (ngModelChange)="menuFormPrice.set($event)"
+            />
+          </div>
+
+          <div class="form-group">
+            <label>Category *</label>
+            <input
+              type="text"
+              placeholder="e.g., Main Course"
+              [ngModel]="menuFormCategory()"
+              (ngModelChange)="menuFormCategory.set($event)"
+            />
+          </div>
+        </div>
+
+        <!-- Quick Category Presets -->
+        <div class="preset-chips">
+          @for (preset of presetCategories; track preset) {
+            <button
+              type="button"
+              class="preset-chip"
+              [class.active]="menuFormCategory() === preset"
+              (click)="menuFormCategory.set(preset)"
+            >
+              {{ preset }}
+            </button>
+          }
+        </div>
+
+        <div class="form-group">
+          <label>Description</label>
+          <textarea
+            rows="3"
+            placeholder="Delicious spicy chicken with basmati rice..."
+            [ngModel]="menuFormDescription()"
+            (ngModelChange)="menuFormDescription.set($event)"
+          ></textarea>
+        </div>
+
+        <div class="availability-box">
+          <div>
+            <strong>Available for Ordering</strong>
+            <p>Customers can immediately add this item to their cart</p>
+          </div>
+          <input
+            type="checkbox"
+            class="avail-checkbox"
+            [ngModel]="menuFormAvailable()"
+            (ngModelChange)="menuFormAvailable.set($event)"
+          />
+        </div>
+      </div>
+
+      <div class="drawer-footer">
+        <button type="button" class="cancel-btn" (click)="closeMenuDrawer()">
+          Cancel
+        </button>
+        <button
+          type="button"
+          class="save-btn"
+          [disabled]="isSubmittingMenu() || isUploadingMenuImg()"
+          (click)="saveMenuItem()"
+        >
+          {{ isSubmittingMenu() ? 'Saving...' : (isEditingMenu() ? 'Save Changes' : 'Create Menu Item') }}
+        </button>
+      </div>
+    </aside>
+  </div>
+}

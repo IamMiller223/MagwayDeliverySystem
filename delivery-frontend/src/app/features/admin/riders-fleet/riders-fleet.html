@@ -1,0 +1,699 @@
+<div class="rf-workspace">
+
+  <!-- ==================== 1. TOP KPI & ACTION BAR ==================== -->
+  <section class="rf-topbar">
+    <div class="rf-kpi-strip">
+      <button
+        type="button"
+        class="status-pill"
+        [class.active]="statusFilter() === 'ALL'"
+        (click)="statusFilter.set('ALL')"
+      >
+        <span>All Riders</span>
+        <span class="count-badge">{{ riders().length }}</span>
+      </button>
+
+      <button
+        type="button"
+        class="status-pill green"
+        [class.active]="statusFilter() === 'AVAILABLE'"
+        (click)="statusFilter.set('AVAILABLE')"
+      >
+        <span class="dot green"></span>
+        <span>Available</span>
+        <span class="count-badge">{{ availableCount() }}</span>
+      </button>
+
+      <button
+        type="button"
+        class="status-pill orange"
+        [class.active]="statusFilter() === 'BUSY'"
+        (click)="statusFilter.set('BUSY')"
+      >
+        <span class="dot orange"></span>
+        <span>Busy on Delivery</span>
+        <span class="count-badge">{{ busyCount() }}</span>
+      </button>
+    </div>
+
+    <div class="rf-top-actions">
+      <button type="button" class="radar-open-btn" (click)="openTrackRiderModal()">
+        <span class="pulse-dot" [class.online]="wsConnected()"></span>
+        <span>🗺️ Live Fleet Radar ({{ liveGpsList().length }} Online)</span>
+      </button>
+
+      <button type="button" class="register-rider-btn" (click)="openCreateRiderDrawer()">
+        + Register New Rider
+      </button>
+    </div>
+  </section>
+
+  <!-- ==================== 2. CLEAN MASTER-DETAIL WORKSPACE (NO EMBEDDED MAP) ==================== -->
+  <div class="rf-split-grid">
+
+    <!-- LEFT PANEL: Riders Directory -->
+    <aside class="rf-master-panel">
+      <div class="panel-header">
+        <div>
+          <h3>Magway Rider Fleet ({{ filteredRiders().length }})</h3>
+          <span>Select a rider to inspect NRC & vehicle details</span>
+        </div>
+      </div>
+
+      <div class="search-bar-box">
+        <input
+          type="text"
+          placeholder="Search rider name or phone..."
+          [ngModel]="searchQuery()"
+          (ngModelChange)="searchQuery.set($event)"
+        />
+      </div>
+
+      <div class="rider-list">
+        @if (isLoadingRiders()) {
+          <div class="empty-box">
+            <div class="spinner"></div>
+            <p>Loading riders fleet...</p>
+          </div>
+        } @else if (filteredRiders().length === 0) {
+          <div class="empty-box">
+            <p>No riders match your filter.</p>
+          </div>
+        } @else {
+          @for (rider of filteredRiders(); track rider.riderId) {
+            <article
+              class="rider-list-card"
+              [class.selected]="selectedRiderId() === rider.riderId"
+              (click)="selectRider(rider.riderId)"
+            >
+              <div class="rider-initial">
+                {{ rider.name.charAt(0) | uppercase }}
+              </div>
+
+              <div class="rider-card-info">
+                <div class="r-row-top">
+                  <strong>{{ rider.name }}</strong>
+                  <span
+                    class="r-status-chip"
+                    [class.avail]="rider.status === 'AVAILABLE'"
+                    [class.busy]="rider.status === 'BUSY'"
+                  >
+                    {{ rider.status | uppercase }}
+                  </span>
+                </div>
+                <span class="r-phone">📞 {{ rider.phone }}</span>
+                <div class="r-meta-bottom">
+                  <span class="r-id">#{{ rider.riderId | slice:-6 | uppercase }}</span>
+                  @if (hasLiveGps(rider.riderId)) {
+                    <span
+                      class="gps-live-tag"
+                      title="Click to open Live GPS Map"
+                      (click)="openTrackRiderModal(rider.riderId, $event)"
+                    >
+                      📡 Track Live
+                    </span>
+                  }
+                </div>
+              </div>
+
+              <button
+                type="button"
+                class="del-icon-btn"
+                title="Remove Rider"
+                (click)="confirmDeleteRider(rider.riderId, rider.name, $event)"
+              >
+                🗑
+              </button>
+            </article>
+          }
+        }
+      </div>
+    </aside>
+
+    <!-- RIGHT PANEL: Clean Rider Profile, Myanmar NRC & Vehicle Card -->
+    <section class="rf-detail-panel">
+      @if (isLoadingProfile()) {
+        <div class="empty-box full">
+          <div class="spinner"></div>
+          <p>Fetching rider profile & vehicle registration...</p>
+        </div>
+      } @else if (selectedProfile(); as profile) {
+        <!-- Top Profile Banner -->
+        <div class="profile-hero-banner">
+          <div class="hero-left">
+            @if (profile.image) {
+              <img
+                [src]="resolveImageUrl(profile.image)"
+                [alt]="profile.name"
+                class="hero-avatar-img"
+              />
+            } @else {
+              <div class="hero-avatar-placeholder">
+                {{ profile.name.charAt(0) | uppercase }}
+              </div>
+            }
+
+            <div class="hero-meta">
+              <div class="hero-name-row">
+                <h2>{{ profile.name }}</h2>
+                <span class="role-badge">{{ profile.role }}</span>
+                <span
+                  class="r-status-chip"
+                  [class.avail]="profile.status === 'AVAILABLE'"
+                  [class.busy]="profile.status === 'BUSY'"
+                >
+                  {{ profile.status | uppercase }}
+                </span>
+              </div>
+              <p class="hero-contacts">
+                <span>📞 {{ profile.phone }}</span>
+                <span>•</span>
+                <span>✉️ {{ profile.email }}</span>
+              </p>
+              <code class="uuid-tag">UUID: {{ profile.userId }}</code>
+            </div>
+          </div>
+
+          <div class="hero-actions">
+            <button
+              type="button"
+              class="btn-track"
+              (click)="openTrackRiderModal(profile.userId)"
+            >
+              📡 Track Rider on Map
+            </button>
+            <button type="button" class="btn-outline" (click)="openEditProfileDrawer()">
+              ✎ Edit Profile & NRC
+            </button>
+            <button
+              type="button"
+              class="btn-danger"
+              (click)="confirmDeleteRider(profile.userId, profile.name)"
+            >
+              🗑 Delete
+            </button>
+          </div>
+        </div>
+
+        <!-- Two-Column Detail Cards: Full-Size Myanmar NRC + Full-Size Vehicle Card -->
+        <div class="detail-cards-grid">
+
+          <!-- CARD 1: Myanmar National Registration Card (NRC) -->
+          <div class="info-card nrc-visual-card">
+            <div class="card-top-row">
+              <div>
+                <span class="card-eyebrow">နိုင်ငံသားစိစစ်ရေးကတ်ပြား • IDENTITY VERIFICATION</span>
+                <h3>Myanmar NRC Registration</h3>
+              </div>
+              <button type="button" class="mini-edit-btn" (click)="openEditProfileDrawer()">
+                Update NRC
+              </button>
+            </div>
+
+            <div class="mm-nrc-badge-box">
+              <span class="nrc-label-mm">မှတ်ပုံတင်အမှတ် (NRC Number)</span>
+              <div class="nrc-number-display myanmar-font">
+                {{ profile.nrcNumber || 'မဖြည့်သွင်းရသေးပါ' }}
+              </div>
+            </div>
+
+            <div class="card-meta-list">
+              <div class="meta-line">
+                <span>Full Name</span>
+                <strong>{{ profile.name }}</strong>
+              </div>
+              <div class="meta-line">
+                <span>Phone Number</span>
+                <a [href]="'tel:' + profile.phone" class="phone-link">{{ profile.phone }}</a>
+              </div>
+              <div class="meta-line">
+                <span>Email Address</span>
+                <span>{{ profile.email }}</span>
+              </div>
+              <div class="meta-line">
+                <span>Live GPS Status</span>
+                @if (selectedRiderGps(); as gps) {
+                  <span class="gps-inline-active" (click)="openTrackRiderModal(profile.userId)">
+                    🟢 Online ({{ gps.latitude | number:'1.4-4' }}, {{ gps.longitude | number:'1.4-4' }}) — View Map ↗
+                  </span>
+                } @else {
+                  <span class="gps-inline-offline">⚪ No active GPS signal</span>
+                }
+              </div>
+            </div>
+          </div>
+
+          <!-- CARD 2: Assigned Delivery Vehicle & Myanmar Licence Plate -->
+          <div class="info-card vehicle-visual-card">
+            <div class="card-top-row">
+              <div>
+                <span class="card-eyebrow">ပို့ဆောင်ရေးယာဉ် • FLEET VEHICLE</span>
+                <h3>Assigned Vehicle & Plate</h3>
+              </div>
+              <button type="button" class="mini-edit-btn primary" (click)="openVehicleDrawer()">
+                ✎ Change Vehicle / Plate
+              </button>
+            </div>
+
+            @if (profile.vehicle; as v) {
+              <div class="mm-licence-plate-frame">
+                <span class="plate-header">MYANMAR DELIVERY FLEET • {{ v.type | uppercase }}</span>
+                <div class="plate-number myanmar-font">
+                  {{ v.licenceNumber }}
+                </div>
+              </div>
+
+              <div class="card-meta-list">
+                <div class="meta-line">
+                  <span>Vehicle Type</span>
+                  <span class="v-type-pill">🛵 {{ v.type }}</span>
+                </div>
+                <div class="meta-line">
+                  <span>Vehicle Record ID</span>
+                  <code>#{{ v.id | slice:-8 | uppercase }}</code>
+                </div>
+                <div class="meta-line">
+                  <span>Registered Date</span>
+                  <span>{{ v.createdAt | date:'MMM d, y • h:mm a' }}</span>
+                </div>
+              </div>
+            } @else {
+              <div class="empty-vehicle-box">
+                <p>No vehicle information registered for this rider.</p>
+                <button type="button" class="register-rider-btn" (click)="openVehicleDrawer()">
+                  + Assign Vehicle Now
+                </button>
+              </div>
+            }
+          </div>
+
+        </div>
+      } @else {
+        <div class="empty-box full">
+          <h3>Select a Rider from the Fleet</h3>
+          <p>Click on any rider on the left to inspect or update their profile, Myanmar NRC, and vehicle plate.</p>
+        </div>
+      }
+    </section>
+
+  </div>
+</div>
+
+<!-- ==================== 3. DEDICATED LIVE RIDER TRACKING MAP MODAL ==================== -->
+@if (isMapModalOpen()) {
+  <div class="radar-modal-backdrop" (click)="closeTrackRiderModal()">
+    <div class="radar-modal-dialog" (click)="$event.stopPropagation()">
+
+      <!-- Modal Top Header -->
+      <div class="radar-modal-header">
+        <div class="radar-title-block">
+          <span class="card-eyebrow">REAL-TIME WEBSOCKET TELEMETRY • MAGWAY</span>
+          <h3>
+            📡 Live Rider GPS Tracking Map
+            @if (selectedProfile(); as p) {
+              <span>— {{ p.name }}</span>
+            }
+          </h3>
+          @if (selectedRiderGps(); as gps) {
+            <p class="radar-sub-coords">
+              Coordinates: <code>{{ gps.latitude | number:'1.5-5' }}, {{ gps.longitude | number:'1.5-5' }}</code>
+              • Status: <strong>{{ gps.status }}</strong>
+              • Updated {{ gps.updatedAt | date:'h:mm:ss a' }}
+            </p>
+          } @else {
+            <p class="radar-sub-waiting">
+              Waiting for selected rider to broadcast GPS on <code>ws://localhost:8080/ws/rider-location</code>...
+            </p>
+          }
+        </div>
+
+        <div class="radar-header-actions">
+          @if (selectedRiderGps()) {
+            <button type="button" class="map-ctrl-btn primary" (click)="focusRiderOnMap()">
+              🎯 Center on {{ selectedProfile()?.name || 'Rider' }}
+            </button>
+          }
+          <button type="button" class="map-ctrl-btn" (click)="fitAllRidersOnMap()">
+            🗺️ Fit All Online Riders
+          </button>
+          <button type="button" class="close-btn" (click)="closeTrackRiderModal()">✕</button>
+        </div>
+      </div>
+
+      <!-- Large Unobstructed Map Canvas -->
+      <div class="radar-map-body">
+        <div #fleetMapContainer class="radar-leaflet-canvas"></div>
+      </div>
+
+      <!-- Quick Switcher Footer for Online Riders -->
+      <div class="radar-modal-footer">
+        <span class="footer-label">ONLINE RIDERS ({{ liveGpsList().length }}):</span>
+        @if (liveGpsList().length === 0) {
+          <span class="footer-empty">No riders currently broadcasting live GPS coordinates.</span>
+        } @else {
+          <div class="online-rider-pills">
+            @for (gps of liveGpsList(); track gps.riderId) {
+              <button
+                type="button"
+                class="online-rider-pill"
+                [class.active]="selectedRiderId() === gps.riderId"
+                (click)="focusRiderOnMap(gps.riderId)"
+              >
+                <span>🛵 {{ getRiderNameById(gps.riderId) }}</span>
+                <span class="mini-status">{{ gps.status }}</span>
+              </button>
+            }
+          </div>
+        }
+      </div>
+
+    </div>
+  </div>
+}
+
+<!-- ==================== 4. CREATE / EDIT RIDER PROFILE & INTERACTIVE NRC DRAWER ==================== -->
+@if (isProfileDrawerOpen()) {
+  <div class="drawer-backdrop" (click)="closeProfileDrawer()">
+    <aside class="fleet-drawer wide" (click)="$event.stopPropagation()">
+      <div class="drawer-header">
+        <div>
+          <span class="card-eyebrow">RIDER ONBOARDING & IDENTITY</span>
+          <h3>{{ isEditingProfile() ? 'Edit Rider Profile & NRC' : 'Register New Delivery Rider' }}</h3>
+        </div>
+        <button type="button" class="close-btn" (click)="closeProfileDrawer()">✕</button>
+      </div>
+
+      <div class="drawer-body">
+        <div class="form-group">
+          <label>Rider Profile Photo</label>
+          <div class="upload-flex">
+            @if (formImage()) {
+              <img [src]="resolveImageUrl(formImage())" alt="Rider preview" class="preview-img" />
+            } @else {
+              <div class="preview-placeholder">🛵</div>
+            }
+            <div class="upload-right">
+              <label class="upload-btn-label">
+                <input type="file" accept="image/*" (change)="onRiderImageSelected($event)" hidden />
+                {{ isUploadingImage() ? 'Uploading...' : '📤 Upload Rider Photo' }}
+              </label>
+              <input
+                type="text"
+                placeholder="Or image filename..."
+                [ngModel]="formImage()"
+                (ngModelChange)="formImage.set($event)"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="form-group">
+            <label>Rider Full Name *</label>
+            <input
+              type="text"
+              placeholder="e.g., Ko Naing / ကိုနိုင်"
+              [ngModel]="formName()"
+              (ngModelChange)="formName.set($event)"
+            />
+          </div>
+
+          <div class="form-group">
+            <label>Myanmar Phone Number *</label>
+            <input
+              type="text"
+              placeholder="e.g., 09123456789"
+              [ngModel]="formPhone()"
+              (ngModelChange)="formPhone.set($event)"
+            />
+          </div>
+        </div>
+
+        @if (!isEditingProfile()) {
+          <div class="grid-2">
+            <div class="form-group">
+              <label>Email Address *</label>
+              <input
+                type="email"
+                placeholder="rider@gmail.com"
+                [ngModel]="formEmail()"
+                (ngModelChange)="formEmail.set($event)"
+              />
+            </div>
+
+            <div class="form-group">
+              <label>Initial Password *</label>
+              <input
+                type="password"
+                placeholder="Minimum 6 characters"
+                [ngModel]="formPassword()"
+                (ngModelChange)="formPassword.set($event)"
+              />
+            </div>
+          </div>
+        }
+
+        <!-- INTERACTIVE MYANMAR NRC BUILDER -->
+        <div class="nrc-builder-card">
+          <div class="builder-head">
+            <div>
+              <h4>🪪 မြန်မာနိုင်ငံသားစိစစ်ရေးကတ်ပြား (Myanmar NRC Builder)</h4>
+              <p>တိုင်း/ပြည်နယ်၊ မြို့နယ်၊ အမျိုးအစားနှင့် ဂဏန်း ၆ လုံးကို ရွေးချယ်ပါ</p>
+            </div>
+
+            <div class="mode-switch">
+              <button
+                type="button"
+                [class.active]="nrcMode() === 'BUILDER'"
+                (click)="nrcMode.set('BUILDER')"
+              >
+                မြန်မာ NRC Builder
+              </button>
+              <button
+                type="button"
+                [class.active]="nrcMode() === 'CUSTOM'"
+                (click)="nrcMode.set('CUSTOM')"
+              >
+                Direct / English
+              </button>
+            </div>
+          </div>
+
+          @if (nrcMode() === 'BUILDER') {
+            <div class="nrc-selectors-grid myanmar-font">
+              <div class="form-group">
+                <label>တိုင်း/ပြည်နယ်</label>
+                <select
+                  class="myanmar-font"
+                  [ngModel]="nrcState()"
+                  (ngModelChange)="onNrcStateChange($event)"
+                >
+                  @for (st of nrcStateOptions; track st.code) {
+                    <option [value]="st.code">{{ st.label }}</option>
+                  }
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label>မြို့နယ်ကုဒ်</label>
+                <select
+                  class="myanmar-font"
+                  [ngModel]="nrcTownship()"
+                  (ngModelChange)="nrcTownship.set($event); nrcCustomTownship.set('')"
+                >
+                  @for (tw of currentTownshipOptions(); track tw) {
+                    <option [value]="tw">{{ tw }}</option>
+                  }
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label>အမျိုးအစား</label>
+                <select
+                  class="myanmar-font"
+                  [ngModel]="nrcCitizenType()"
+                  (ngModelChange)="nrcCitizenType.set($event)"
+                >
+                  @for (ct of nrcCitizenTypes; track ct.value) {
+                    <option [value]="ct.value">{{ ct.label }}</option>
+                  }
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label>ဂဏန်း ၆ လုံး (၁၂၃၄၅၆)</label>
+                <input
+                  type="text"
+                  class="myanmar-font"
+                  placeholder="၁၂၃၄၅၆"
+                  maxlength="6"
+                  [ngModel]="nrcDigits()"
+                  (ngModelChange)="onNrcDigitsInput($event)"
+                />
+              </div>
+            </div>
+
+            <div class="custom-township-row">
+              <label>အခြားမြို့နယ်ကုဒ် စိတ်ကြိုက်ရိုက်ရန် (Optional):</label>
+              <input
+                type="text"
+                class="myanmar-font"
+                placeholder="ဥပမာ - မကန"
+                [ngModel]="nrcCustomTownship()"
+                (ngModelChange)="nrcCustomTownship.set($event)"
+              />
+            </div>
+          } @else {
+            <div class="form-group">
+              <label>Enter Full NRC (Myanmar or English Format)</label>
+              <input
+                type="text"
+                class="myanmar-font"
+                placeholder="၈/မကန(နိုင်)၁၂၃၄၅၆ or 8/MAGAWA(N)123456"
+                [ngModel]="customNrcString()"
+                (ngModelChange)="customNrcString.set($event)"
+              />
+            </div>
+          }
+
+          <div class="nrc-live-preview" [class.valid]="isNrcValid()" [class.invalid]="!isNrcValid()">
+            <div>
+              <span class="preview-caption">FINAL COMBINED NRC STRING:</span>
+              <strong class="preview-value myanmar-font">{{ computedNrcNumber() }}</strong>
+            </div>
+            <span class="validation-chip">
+              {{ isNrcValid() ? '✓ Valid Myanmar NRC' : '⚠ Complete 6 Digits' }}
+            </span>
+          </div>
+        </div>
+
+        @if (!isEditingProfile()) {
+          <div class="vehicle-onboarding-box">
+            <h4>🛵 Initial Vehicle & Myanmar Licence Plate</h4>
+            <div class="grid-2">
+              <div class="form-group">
+                <label>Vehicle Type *</label>
+                <select [ngModel]="formVehicleType()" (ngModelChange)="formVehicleType.set($event)">
+                  @for (vt of vehicleTypes; track vt) {
+                    <option [value]="vt">{{ vt }}</option>
+                  }
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label>Licence Plate (မြန်မာ / English) *</label>
+                <input
+                  type="text"
+                  class="myanmar-font"
+                  placeholder="မကွေး-၉၂၈၈ or MGW-9288"
+                  [ngModel]="formLicenceNumber()"
+                  (ngModelChange)="formLicenceNumber.set($event)"
+                />
+              </div>
+            </div>
+
+            <div class="plate-presets-row">
+              <span>Quick Prefixes:</span>
+              @for (prefix of licencePresets; track prefix) {
+                <button
+                  type="button"
+                  class="prefix-chip myanmar-font"
+                  (click)="formLicenceNumber.set(prefix)"
+                >
+                  {{ prefix }}
+                </button>
+              }
+              <span class="plate-valid-tag" [class.ok]="isCreateLicenceValid()">
+                {{ isCreateLicenceValid() ? '✓ Standard Format' : 'Format: မကွေး-၉၂၈၈ / ၁၂ယ/၁၂၃၄၅ / MGW-9288' }}
+              </span>
+            </div>
+          </div>
+        }
+      </div>
+
+      <div class="drawer-footer">
+        <button type="button" class="btn-cancel" (click)="closeProfileDrawer()">Cancel</button>
+        <button
+          type="button"
+          class="btn-save"
+          [disabled]="isSubmittingProfile() || isUploadingImage()"
+          (click)="saveRiderProfile()"
+        >
+          {{ isSubmittingProfile() ? 'Saving...' : (isEditingProfile() ? 'Update Profile & NRC' : 'Register Rider') }}
+        </button>
+      </div>
+    </aside>
+  </div>
+}
+
+<!-- ==================== 5. UPDATE RIDER VEHICLE DRAWER ==================== -->
+@if (isVehicleDrawerOpen() && selectedProfile(); as profile) {
+  <div class="drawer-backdrop" (click)="closeVehicleDrawer()">
+    <aside class="fleet-drawer" (click)="$event.stopPropagation()">
+      <div class="drawer-header">
+        <div>
+          <span class="card-eyebrow">{{ profile.name | uppercase }} VEHICLE</span>
+          <h3>Update Vehicle & Licence Plate</h3>
+        </div>
+        <button type="button" class="close-btn" (click)="closeVehicleDrawer()">✕</button>
+      </div>
+
+      <div class="drawer-body">
+        <div class="form-group">
+          <label>Vehicle Type *</label>
+          <select [ngModel]="vehicleFormType()" (ngModelChange)="vehicleFormType.set($event)">
+            @for (vt of vehicleTypes; track vt) {
+              <option [value]="vt">{{ vt }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Myanmar Licence Number (မြန်မာဖောင့် သို့မဟုတ် အင်္ဂလိပ်) *</label>
+          <input
+            type="text"
+            class="myanmar-font plate-input-large"
+            placeholder="ဥပမာ - မကွေး-၉၂၈၈၊ ၁၂ယ/၁၂၃၄၅၊ MGW-9288"
+            [ngModel]="vehicleFormLicence()"
+            (ngModelChange)="vehicleFormLicence.set($event)"
+          />
+        </div>
+
+        <div class="plate-presets-row">
+          <span>Quick Prefixes:</span>
+          @for (prefix of licencePresets; track prefix) {
+            <button
+              type="button"
+              class="prefix-chip myanmar-font"
+              (click)="vehicleFormLicence.set(prefix)"
+            >
+              {{ prefix }}
+            </button>
+          }
+        </div>
+
+        <div class="nrc-live-preview" [class.valid]="isEditLicenceValid()" [class.invalid]="!isEditLicenceValid()">
+          <div>
+            <span class="preview-caption">LICENCE PLATE PREVIEW:</span>
+            <strong class="preview-value myanmar-font">{{ vehicleFormLicence() }}</strong>
+          </div>
+          <span class="validation-chip">
+            {{ isEditLicenceValid() ? '✓ Valid Myanmar Plate' : '⚠ Invalid Format' }}
+          </span>
+        </div>
+      </div>
+
+      <div class="drawer-footer">
+        <button type="button" class="btn-cancel" (click)="closeVehicleDrawer()">Cancel</button>
+        <button
+          type="button"
+          class="btn-save"
+          [disabled]="isSubmittingVehicle()"
+          (click)="saveRiderVehicle()"
+        >
+          {{ isSubmittingVehicle() ? 'Updating...' : 'Save Vehicle Details' }}
+        </button>
+      </div>
+    </aside>
+  </div>
+}

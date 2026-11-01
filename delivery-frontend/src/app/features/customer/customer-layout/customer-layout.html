@@ -1,0 +1,190 @@
+<div class="layout-wrapper">
+
+  <!-- ==================== ROLE RETURN BANNER (ADMIN / RIDER ONLY) ==================== -->
+  @if (isAdmin()) {
+    <div class="role-return-banner admin-banner">
+      <div class="banner-inner">
+        <div class="banner-left">
+          <span class="role-chip admin">ADMIN MODE</span>
+          <span class="banner-msg">
+            You are viewing the live Customer Storefront.
+          </span>
+        </div>
+        <a routerLink="/admin/dashboard" class="return-portal-btn admin">
+          <span>Return to Admin Dashboard</span>
+          <span class="arrow">→</span>
+        </a>
+      </div>
+    </div>
+  } @else if (isRider()) {
+    <div class="role-return-banner rider-banner">
+      <div class="banner-inner">
+        <div class="banner-left">
+          <span class="role-chip rider">RIDER MODE</span>
+          <span class="banner-msg">
+            Signed in as a Delivery Rider.
+          </span>
+        </div>
+        <a routerLink="/rider" class="return-portal-btn rider">
+          <span>Open Rider App</span>
+          <span class="arrow">→</span>
+        </a>
+      </div>
+    </div>
+  }
+
+  <!-- ==================== TOP HEADER (ALWAYS VISIBLE) ==================== -->
+  <header class="top-nav">
+    <!-- CLICKABLE BRAND LOGO + NAME -->
+    <a routerLink="/customer" class="brand" aria-label="Magway Food Delivery Home">
+      <div class="brand-logo-box">
+        <svg viewBox="0 0 24 24" fill="none" class="brand-svg">
+          <path d="M19 7h-3V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2H5a3 3 0 0 0-3 3v7a2 2 0 0 0 2 2h1.18a3 3 0 0 0 5.64 0h2.36a3 3 0 0 0 5.64 0H20a2 2 0 0 0 2-2v-4l-3-6z" fill="currentColor" fill-opacity="0.15"/>
+          <circle cx="7.5" cy="17.5" r="2.5" stroke="currentColor" stroke-width="2"/>
+          <circle cx="16.5" cy="17.5" r="2.5" stroke="currentColor" stroke-width="2"/>
+          <path d="M5 17.5H3.5a1.5 1.5 0 0 1-1.5-1.5v-3a2 2 0 0 1 2-2h6v6.5m0 0h4m2.5 0H20a2 2 0 0 0 2-2v-2.34a2 2 0 0 0-.4-1.2l-2.2-2.93A2 2 0 0 0 17.8 8H14v9.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M3 7h4M1 10h4" stroke="#f97316" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </div>
+
+      <div class="brand-text">
+        <span class="brand-title">Magway</span>
+        <span class="brand-subtitle">Food Delivery</span>
+      </div>
+    </a>
+
+    <div class="top-actions">
+      <!-- Primary Links (Hidden on mobile top bar, visible on desktop) -->
+      <a routerLink="/customer" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="nav-item desktop-only">
+        <div class="icon-wrapper">
+          <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+        </div>
+        <span>Home</span>
+      </a>
+
+      <!-- Orders (Desktop Top Bar Only - Mobile uses Bottom Nav) -->
+      @if (user()) {
+        <a routerLink="/customer/orders" routerLinkActive="active" class="nav-item desktop-only">
+          <div class="icon-wrapper">
+            <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+          </div>
+          <span>Orders</span>
+        </a>
+      }
+
+      <a routerLink="/customer/cart" routerLinkActive="active" class="nav-item desktop-only">
+        <div class="icon-wrapper">
+          @if (cartService.totalItems() > 0) {
+            <span class="badge">{{ cartService.totalItems() }}</span>
+          }
+          <svg viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
+        </div>
+        <span>Carts</span>
+      </a>
+
+      <!-- Account / Login / Sign Up Dropdown -->
+      <div class="account-dropdown-wrapper">
+        <button type="button" class="nav-item account-trigger-btn" (click)="toggleAccountMenu($event)">
+          @if (user(); as currentUser) {
+            <div class="avatar-wrapper">
+              <img
+                [src]="getUserAvatarUrl(currentUser.img)"
+                [alt]="currentUser.name"
+                class="user-avatar-img"
+                (error)="onAvatarError($event)"
+              />
+            </div>
+          } @else {
+            <div class="icon-wrapper">
+              <svg viewBox="0 0 24 24">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+              </svg>
+            </div>
+            <span class="desktop-text-only">Login</span>
+          }
+        </button>
+
+        @if (isAccountMenuOpen()) {
+          <div class="account-dropdown-menu" (click)="$event.stopPropagation()">
+            @if (user(); as currentUser) {
+              <div class="dropdown-user-header">
+                <span class="greeting">Signed in as</span>
+                <strong class="user-name">{{ currentUser.name }}</strong>
+              </div>
+
+              <!-- Quick Portal Switch inside Dropdown for Admin / Rider -->
+              @if (isAdmin()) {
+                <a routerLink="/admin/dashboard" class="dropdown-item portal-highlight" (click)="closeAccountMenu()">
+                  <span>🛠️</span>
+                  <span>Admin Dashboard</span>
+                </a>
+                <div class="dropdown-divider"></div>
+              } @else if (isRider()) {
+                <a routerLink="/rider" class="dropdown-item portal-highlight" (click)="closeAccountMenu()">
+                  <span>🛵</span>
+                  <span>Rider Workspace</span>
+                </a>
+                <div class="dropdown-divider"></div>
+              }
+
+              <a routerLink="/customer/profile" class="dropdown-item" (click)="closeAccountMenu()">
+                <span>👤</span>
+                <span>View Profile</span>
+              </a>
+
+              <div class="dropdown-divider"></div>
+
+              <button type="button" class="dropdown-item logout-item" (click)="logout()">
+                <span>🚪</span>
+                <span>Logout</span>
+              </button>
+            } @else {
+              <a routerLink="/login" class="dropdown-item" (click)="closeAccountMenu()">
+                <span>🔑</span>
+                <span>Login</span>
+              </a>
+
+              <a routerLink="/sign-up" class="dropdown-item" (click)="closeAccountMenu()">
+                <span>✨</span>
+                <span>Sign Up</span>
+              </a>
+            }
+          </div>
+        }
+      </div>
+    </div>
+  </header>
+
+  <main class="content-area">
+    <router-outlet></router-outlet>
+  </main>
+
+  <!-- Bottom Navigation (Mobile Only - Max 3 Buttons) -->
+  <nav class="bottom-nav">
+    <a routerLink="/customer" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="bottom-nav-item">
+      <div class="icon-wrapper">
+        <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+      </div>
+      <span>Home</span>
+    </a>
+
+    <a [routerLink]="user() ? '/customer/orders' : '/login'" routerLinkActive="active" class="bottom-nav-item">
+      <div class="icon-wrapper">
+        <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+      </div>
+      <span>Orders</span>
+    </a>
+
+    <a routerLink="/customer/cart" routerLinkActive="active" class="bottom-nav-item">
+      <div class="icon-wrapper">
+        @if (cartService.totalItems() > 0) {
+          <span class="badge">{{ cartService.totalItems() }}</span>
+        }
+        <svg viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
+      </div>
+      <span>Carts</span>
+    </a>
+  </nav>
+
+</div>

@@ -1,0 +1,61 @@
+<div class="orders-wrapper">
+  <div class="orders-header">
+    <h2>My Orders</h2>
+    <p>Track your active deliveries and view past history.</p>
+  </div>
+
+  @if (isLoading()) {
+    <div class="loading-state">
+      <p>Loading your orders...</p>
+    </div>
+  }
+
+  @if (!isLoading() && orders().length === 0) {
+    <div class="empty-state">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+        <line x1="3" y1="6" x2="21" y2="6"></line>
+        <path d="M16 10a4 4 0 0 1-8 0"></path>
+      </svg>
+      <h3>No orders found</h3>
+      <p>You haven't placed any orders yet. Time to grab some food!</p>
+      <a href="/customer" class="browse-btn">Browse Restaurants</a>
+    </div>
+  }
+
+  @if (!isLoading() && orders().length > 0) {
+    <div class="orders-list">
+      @for (order of orders(); track order.orderId) {
+        <div class="order-card" (click)="viewOrderDetails(order.orderId)">
+
+          <div class="order-card-header">
+            <div class="order-meta">
+              <span class="order-id">Order #{{ order.orderId.substring(0, 8) | uppercase }}</span>
+              <span class="order-date">{{ order.createdAt | date:'medium' }}</span>
+            </div>
+            <span class="status-badge" [ngClass]="getStatusClass(order.status)">
+              {{ order.status }}
+            </span>
+          </div>
+
+          <div class="order-body">
+            <div class="restaurant-name">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path>
+                <path d="M7 2v20"></path>
+                <path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path>
+              </svg>
+              <span>{{ order.restaurantName }}</span>
+            </div>
+          </div>
+
+          <div class="order-footer">
+            <div class="total-label">Food Total:</div>
+            <div class="total-amount">MMK {{ order.totalAmount | number }}</div>
+          </div>
+
+        </div>
+      }
+    </div>
+  }
+</div>

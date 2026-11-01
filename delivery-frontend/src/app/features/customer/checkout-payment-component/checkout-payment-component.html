@@ -1,0 +1,116 @@
+<div class="checkout-wrapper">
+  <div class="checkout-header">
+    <h2>Step 2: Payment</h2>
+    <p>Review your itemized total, transfer the exact amount, and upload your payment screenshot.</p>
+  </div>
+
+  <div class="checkout-grid">
+    <!-- Order Summary (Left Column) -->
+    <div class="summary-card">
+      <h3>Order Summary</h3>
+
+      <div class="summary-items">
+        @for (item of cartService.cartItems(); track item.id) {
+          <div class="summary-row">
+            <span>{{item.quantity}}x {{item.name}}</span>
+            <span>MMK {{item.price * item.quantity | number}}</span>
+          </div>
+        }
+      </div>
+
+      <hr>
+
+      <div class="summary-row">
+        <span>Food Total</span>
+        <span>MMK {{ foodTotal | number }}</span>
+      </div>
+
+      <div class="summary-row">
+        <span>
+          Delivery Fee
+          <small class="distance-info">({{ totalDistanceKm() | number:'1.1-1' }} km • {{ uniqueRestaurantsCount() }} rest.)</small>
+        </span>
+        <span>MMK {{ calculatedDeliveryFee() | number }}</span>
+      </div>
+
+      <hr class="total-divider">
+
+      <div class="summary-row total-row">
+        <span>Overall Total</span>
+        <span class="total-price">MMK {{ overallTotal() | number }}</span>
+      </div>
+
+      <!-- Delivery Fee Breakdown Formula Box -->
+      <div class="delivery-formula-box">
+        <div class="formula-title">
+          <span>📐 Delivery Fee Formula</span>
+        </div>
+        <ul>
+          <li><strong>Base Fee:</strong> MMK {{ config().baseDeliveryFee | number }}</li>
+          <li><strong>Distance ({{ totalDistanceKm() | number:'1.1-1' }} km × {{ config().deliveryFeePerKm }}):</strong> MMK {{ distanceFee() | number }}</li>
+          @if (uniqueRestaurantsCount() > 1) {
+            <li><strong>Multi-Stop Surcharge ({{ uniqueRestaurantsCount() - 1 }} extra):</strong> MMK {{ multiStopFeeTotal() | number }}</li>
+          }
+          <li><strong>Rounding Ceiling:</strong> Rounded up to nearest {{ config().roundingCeiling }} MMK</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Payment Upload (Right Column) -->
+    <div class="payment-card">
+      <h3>Transfer Details</h3>
+
+      <div class="bank-details">
+        <div class="account">
+          <strong>KBZPay:</strong> 09123456789 (U Myat Thu Ko)
+        </div>
+        <div class="account">
+          <strong>Wave Money:</strong> 09123456789 (U Myat Thu Ko)
+        </div>
+        <div class="amount-required">
+          Transfer exactly: <span>MMK {{ overallTotal() | number }}</span>
+        </div>
+      </div>
+
+      <div class="upload-section">
+        <label for="paymentProof" class="upload-label">Upload Payment Screenshot</label>
+        <input
+          type="file"
+          id="paymentProof"
+          (change)="onFileSelected($event)"
+          accept="image/png, image/jpeg"
+          class="file-input"
+        >
+
+        @if (previewUrl()) {
+          <div class="image-preview">
+            <img [src]="previewUrl()" alt="Payment Proof Preview">
+          </div>
+        }
+      </div>
+
+      <button
+        class="submit-btn"
+        [disabled]="!selectedFile() || isSubmitting()"
+        (click)="submitOrder()">
+        {{ isSubmitting() ? 'Processing Order...' : 'Confirm & Place Order' }}
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Custom Success Modal Overlay -->
+@if (showSuccessModal()) {
+  <div class="modal-overlay">
+    <div class="success-modal">
+      <div class="success-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="20 6 9 17 4 12"></polyline>
+        </svg>
+      </div>
+      <h3>Order Successful!</h3>
+      <p>Your payment proof is uploaded and the restaurant is preparing your food.</p>
+      <button class="view-orders-btn" (click)="goToOrders()">View My Orders</button>
+    </div>
+  </div>
+}

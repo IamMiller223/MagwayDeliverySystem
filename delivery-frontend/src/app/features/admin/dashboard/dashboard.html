@@ -1,0 +1,652 @@
+<div class="dashboard-workspace">
+
+  <!-- ==================== 1. KPI SUMMARY ROW ==================== -->
+  <section class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-icon orange">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"></circle>
+          <polyline points="12 6 12 12 16 14"></polyline>
+        </svg>
+      </div>
+      <div class="kpi-info">
+        <span class="kpi-label">Pending Approval</span>
+        <span class="kpi-value">{{ pendingCount() }} <small>orders</small></span>
+        <span class="kpi-sub">Requires immediate review</span>
+      </div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-icon blue">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+          <line x1="16" y1="2" x2="16" y2="6"></line>
+          <line x1="8" y1="2" x2="8" y2="6"></line>
+          <line x1="3" y1="10" x2="21" y2="10"></line>
+        </svg>
+      </div>
+      <div class="kpi-info">
+        <span class="kpi-label">Today's Volume</span>
+        <span class="kpi-value">{{ todayOrderCount() }} <small>orders</small></span>
+        <span class="kpi-sub">MMK {{ todayRevenue() | number }} today</span>
+      </div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-icon green">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="12" y1="1" x2="12" y2="23"></line>
+          <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+        </svg>
+      </div>
+      <div class="kpi-info">
+        <span class="kpi-label">Active View Revenue</span>
+        <span class="kpi-value">MMK {{ totalViewRevenue() | number }}</span>
+        <span class="kpi-sub">Excludes cancelled orders</span>
+      </div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-icon purple">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+          <polyline points="22 4 12 14.01 9 11.01"></polyline>
+        </svg>
+      </div>
+      <div class="kpi-info">
+        <span class="kpi-label">Delivered Revenue</span>
+        <span class="kpi-value">MMK {{ deliveredRevenue() | number }}</span>
+        <span class="kpi-sub">Completed deliveries in view</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 2. ANALYTICS CHARTS ROW ==================== -->
+  <section class="charts-grid">
+    <!-- Left Card: SVG Donut Chart for Order Status Distribution -->
+    <div class="chart-card">
+      <div class="card-header">
+        <div>
+          <h3>Order Status Distribution</h3>
+          <p>Live breakdown of {{ orders().length }} loaded orders</p>
+        </div>
+      </div>
+
+      <div class="donut-layout">
+        <div class="donut-wrapper">
+          <svg viewBox="0 0 100 100" class="donut-svg">
+            <circle cx="50" cy="50" r="40" fill="transparent" stroke="#f1f5f9" stroke-width="12"></circle>
+            @for (metric of statusMetrics(); track metric.status) {
+              @if (metric.count > 0) {
+                <circle
+                  cx="50"
+                  cy="50"
+                  r="40"
+                  fill="transparent"
+                  [attr.stroke]="metric.color"
+                  stroke-width="12"
+                  [attr.stroke-dasharray]="metric.strokeDasharray"
+                  [attr.stroke-dashoffset]="metric.strokeDashoffset"
+                  transform="rotate(-90 50 50)"
+                ></circle>
+              }
+            }
+          </svg>
+          <div class="donut-center">
+            <span class="donut-total">{{ orders().length }}</span>
+            <span class="donut-label">Orders</span>
+          </div>
+        </div>
+
+        <div class="donut-legend">
+          @for (metric of statusMetrics(); track metric.status) {
+            <div class="legend-item" (click)="selectedStatusTab.set(metric.status)">
+              <span class="legend-dot" [style.background]="metric.color"></span>
+              <span class="legend-name">{{ metric.label }}</span>
+              <span class="legend-count">{{ metric.count }}</span>
+              <span class="legend-pct">{{ metric.percentage }}%</span>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Card: Revenue & Volume by Status Horizontal Bar Chart -->
+    <div class="chart-card">
+      <div class="card-header">
+        <div>
+          <h3>Revenue & Volume by Stage</h3>
+          <p>MMK value across each fulfillment stage</p>
+        </div>
+      </div>
+
+      <div class="bar-chart-list">
+        @for (metric of statusMetrics(); track metric.status) {
+          <div class="bar-row">
+            <div class="bar-meta">
+              <span class="bar-label">
+                <span class="bar-dot" [style.background]="metric.color"></span>
+                {{ metric.label }}
+              </span>
+              <span class="bar-amount">MMK {{ metric.revenue | number }} ({{ metric.count }})</span>
+            </div>
+            <div class="bar-track">
+              <div
+                class="bar-fill"
+                [style.width.%]="(metric.revenue / maxStatusRevenue()) * 100"
+                [style.background]="metric.color"
+              ></div>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 3. ORDERS TABLE & DATE FILTERS ==================== -->
+  <section class="orders-panel">
+    <!-- Top Filter Toolbar -->
+    <div class="toolbar-top">
+      <div class="preset-group">
+        <button
+          type="button"
+          class="preset-btn"
+          [class.active]="filterMode() === 'ALL'"
+          (click)="applyQuickPreset('ALL')"
+        >
+          All Orders (Paginated)
+        </button>
+        <button
+          type="button"
+          class="preset-btn"
+          [class.active]="filterMode() === 'SINGLE_DATE'"
+          (click)="applyQuickPreset('TODAY')"
+        >
+          Today
+        </button>
+        <button
+          type="button"
+          class="preset-btn"
+          (click)="applyQuickPreset('LAST_7_DAYS')"
+        >
+          Last 7 Days
+        </button>
+      </div>
+
+      <!-- Date Controls: Single Date & Date Range -->
+      <div class="date-filters">
+        <!-- Single Date Filter (/api/orders/by-date) -->
+        <div class="filter-box">
+          <label>By Date:</label>
+          <input type="date" [ngModel]="singleDate()" (ngModelChange)="singleDate.set($event)" />
+          <button type="button" class="apply-btn" (click)="applySingleDateFilter()">Go</button>
+        </div>
+
+        <div class="v-divider"></div>
+
+        <!-- Date Range Filter (/api/orders?from=&to=) -->
+        <div class="filter-box">
+          <label>From:</label>
+          <input type="date" [ngModel]="fromDate()" (ngModelChange)="fromDate.set($event)" />
+          <label>To:</label>
+          <input type="date" [ngModel]="toDate()" (ngModelChange)="toDate.set($event)" />
+          <button type="button" class="apply-btn primary" (click)="applyDateRangeFilter()">
+            Filter Range
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Second Toolbar: Status Tabs & Search -->
+    <div class="toolbar-bottom">
+      <div class="status-tabs">
+        @for (tab of statusTabs; track tab) {
+          <button
+            type="button"
+            class="status-tab"
+            [class.active]="selectedStatusTab() === tab"
+            (click)="selectedStatusTab.set(tab)"
+          >
+            {{ tab === 'ALL' ? 'All Statuses' : (statusConfig[tab]?.label || tab) }}
+          </button>
+        }
+      </div>
+
+      <div class="search-box">
+        <input
+          type="text"
+          placeholder="Search order ID or customer name..."
+          [ngModel]="searchQuery()"
+          (ngModelChange)="searchQuery.set($event)"
+        />
+      </div>
+    </div>
+
+    <!-- Orders Table -->
+    <div class="table-wrapper">
+      @if (isLoading()) {
+        <div class="table-loading">
+          <div class="spinner"></div>
+          <span>Fetching system orders...</span>
+        </div>
+      } @else {
+        <table class="orders-table">
+          <thead>
+          <tr>
+            <th>Order ID</th>
+            <th>Customer Name</th>
+            <th>Status</th>
+            <th>Total Amount</th>
+            <th class="text-right">Actions</th>
+          </tr>
+          </thead>
+          <tbody>
+            @if (filteredOrders().length === 0) {
+              <tr>
+                <td colspan="5" class="empty-row">
+                  No orders match the current date or status filter.
+                </td>
+              </tr>
+            } @else {
+              @for (order of filteredOrders(); track order.orderId) {
+                <tr>
+                  <td>
+                    <span class="order-id-pill">#{{ order.orderId | slice:-8 | uppercase }}</span>
+                    <span class="full-id">{{ order.orderId }}</span>
+                  </td>
+                  <td>
+                    <div class="customer-cell">
+                      <div class="customer-avatar">{{ order.customerName.charAt(0) }}</div>
+                      <strong>{{ order.customerName }}</strong>
+                    </div>
+                  </td>
+                  <td>
+                    <span
+                      class="status-badge"
+                      [style.color]="statusConfig[order.status]?.color || '#334155'"
+                      [style.background]="statusConfig[order.status]?.bgLight || '#f1f5f9'"
+                    >
+                      <span class="dot" [style.background]="statusConfig[order.status]?.color"></span>
+                      {{ statusConfig[order.status]?.label || order.status }}
+                    </span>
+                  </td>
+                  <td class="amount-col">MMK {{ order.totalAmount | number }}</td>
+                  <td class="text-right">
+                    <button type="button" class="manage-btn" (click)="openOrderDrawer(order)">
+                      View / Manage
+                    </button>
+                  </td>
+                </tr>
+              }
+            }
+          </tbody>
+        </table>
+      }
+    </div>
+
+    <!-- Pagination Bar (Active for Paginated All & Date Range Queries) -->
+    @if (filterMode() !== 'SINGLE_DATE') {
+      <div class="pagination-footer">
+        <span class="page-info">
+          Page <strong>{{ currentPage() + 1 }}</strong> • Showing {{ filteredOrders().length }} results (Size: {{ pageSize() }})
+        </span>
+        <div class="page-buttons">
+          <button
+            type="button"
+            class="page-btn"
+            [disabled]="currentPage() === 0 || isLoading()"
+            (click)="prevPage()"
+          >
+            ← Previous
+          </button>
+          <button
+            type="button"
+            class="page-btn"
+            [disabled]="orders().length < pageSize() || isLoading()"
+            (click)="nextPage()"
+          >
+            Next →
+          </button>
+        </div>
+      </div>
+    }
+  </section>
+</div>
+
+<!-- ==================== 4. ORDER DETAILS & ACTION DRAWER ==================== -->
+@if (isDrawerOpen() && selectedOrderSummary(); as summary) {
+  <div class="drawer-backdrop" (click)="closeOrderDrawer()">
+    <aside class="order-drawer" (click)="$event.stopPropagation()">
+      <!-- Drawer Header -->
+      <div class="drawer-header">
+        <div>
+          <span class="drawer-eyebrow">ADMIN ORDER VERIFICATION</span>
+          <h3>Order #{{ summary.orderId | slice:-8 | uppercase }}</h3>
+          @if (selectedOrderDetail()?.createdAt; as createdAt) {
+            <span class="drawer-timestamp">Placed on {{ createdAt | date:'MMM d, y • h:mm a' }}</span>
+          }
+        </div>
+        <button type="button" class="close-drawer-btn" (click)="closeOrderDrawer()">✕</button>
+      </div>
+
+      <!-- Drawer Body -->
+      <div class="drawer-body">
+        <!-- Status & Total Banner -->
+        <div class="drawer-summary-box">
+          <div>
+            <span class="d-label">Order Status</span>
+            <span
+              class="status-badge"
+              [style.color]="statusConfig[summary.status]?.color"
+              [style.background]="statusConfig[summary.status]?.bgLight"
+            >
+              <span class="dot" [style.background]="statusConfig[summary.status]?.color"></span>
+              {{ statusConfig[summary.status]?.label || summary.status }}
+            </span>
+          </div>
+          <div class="text-right">
+            <span class="d-label">Expected Transfer Amount</span>
+            <strong class="d-total">MMK {{ summary.totalAmount | number }}</strong>
+          </div>
+        </div>
+
+        @if (isLoadingDetails()) {
+          <div class="drawer-loading">
+            <div class="spinner"></div>
+            <span>Fetching full order & payment proof...</span>
+          </div>
+        } @else if (selectedOrderDetail(); as detail) {
+
+          <!-- 1. PAYMENT SCREENSHOT VERIFICATION CARD -->
+          <div class="verification-card">
+            <div class="verification-header">
+              <div>
+                <h4>💳 Payment Proof Verification</h4>
+                <p>Verify screenshot matches <strong>MMK {{ detail.totalAmount | number }}</strong></p>
+              </div>
+              @if (detail.paymentImg) {
+                <a
+                  [href]="resolveImageUrl(detail.paymentImg)"
+                  target="_blank"
+                  rel="noopener"
+                  class="open-raw-link"
+                >
+                  Open Original ↗
+                </a>
+              }
+            </div>
+
+            @if (detail.paymentImg && !paymentImageError()) {
+              <div class="payment-img-container" (click)="openPaymentZoom()" title="Click to zoom full screen">
+                <img
+                  [src]="resolveImageUrl(detail.paymentImg)"
+                  alt="Customer Payment Screenshot"
+                  class="payment-proof-img"
+                  (error)="paymentImageError.set(true)"
+                />
+                <div class="zoom-hint-badge">🔍 Click to Inspect Fullscreen</div>
+              </div>
+            } @else {
+              <div class="payment-missing-box">
+                <span>⚠️ Unable to load payment screenshot preview</span>
+                @if (detail.paymentImg) {
+                  <code>{{ detail.paymentImg }}</code>
+                }
+              </div>
+            }
+          </div>
+
+          <!-- 2. CUSTOMER & DELIVERY LOCATION -->
+          <div class="drawer-section card-box">
+            <h4>📍 Customer & Delivery Info</h4>
+            <div class="info-grid">
+              <div class="info-row">
+                <span class="info-key">Customer Name</span>
+                <strong class="info-val">{{ detail.customer?.name || summary.customerName }}</strong>
+              </div>
+              <div class="info-row">
+                <span class="info-key">Shipping Phone</span>
+                <a [href]="'tel:' + detail.shippingPhone" class="info-val phone-link">
+                  {{ detail.shippingPhone || detail.customer?.phone || 'N/A' }}
+                </a>
+              </div>
+              <div class="info-row">
+                <span class="info-key">Delivery Address</span>
+                <span class="info-val">{{ detail.deliveryAddress }}</span>
+              </div>
+              @if (detail.customer?.latitude && detail.customer?.longitude) {
+                <div class="info-row">
+                  <span class="info-key">GPS Coordinates</span>
+                  <a
+                    [href]="getGoogleMapsUrl(detail.customer?.latitude, detail.customer?.longitude)"
+                    target="_blank"
+                    rel="noopener"
+                    class="map-pin-link"
+                  >
+                    📌 {{ detail.customer?.latitude }}, {{ detail.customer?.longitude }} (View Map ↗)
+                  </a>
+                </div>
+              }
+            </div>
+          </div>
+
+          <!-- 2.5 ASSIGNED RIDER & VEHICLE INFO -->
+          <div class="drawer-section card-box rider-card-box">
+            <div class="section-title-row">
+              <h4>🛵 Assigned Rider</h4>
+              @if (detail.rider; as rider) {
+                <span class="rider-status-pill" [class.busy]="rider.status === 'BUSY'">
+                  {{ rider.status }}
+                </span>
+              }
+            </div>
+
+            @if (detail.rider; as rider) {
+              <div class="assigned-rider-header">
+                @if (rider.image) {
+                  <img
+                    [src]="resolveImageUrl(rider.image)"
+                    [alt]="rider.name"
+                    class="assigned-rider-avatar-img"
+                  />
+                } @else {
+                  <div class="assigned-rider-avatar">
+                    {{ rider.name.charAt(0) | uppercase }}
+                  </div>
+                }
+
+                <div class="assigned-rider-headline">
+                  <strong>{{ rider.name }}</strong>
+                  <span class="rider-sub-email">{{ rider.email }}</span>
+                </div>
+
+                <a [href]="'tel:' + rider.phone" class="call-rider-btn" title="Call Rider">
+                  📞 Call
+                </a>
+              </div>
+
+              <div class="info-grid">
+                <div class="info-row">
+                  <span class="info-key">Phone Number</span>
+                  <a [href]="'tel:' + rider.phone" class="info-val phone-link">
+                    {{ rider.phone }}
+                  </a>
+                </div>
+
+                <div class="info-row">
+                  <span class="info-key">NRC Number</span>
+                  <span class="info-val nrc-code">{{ rider.nrcNumber || 'N/A' }}</span>
+                </div>
+
+                @if (rider.vehicle; as vehicle) {
+                  <div class="info-row">
+                    <span class="info-key">Vehicle Type</span>
+                    <span class="info-val">
+                      <span class="vehicle-type-badge">{{ vehicle.type }}</span>
+                    </span>
+                  </div>
+
+                  <div class="info-row">
+                    <span class="info-key">Licence Plate</span>
+                    <span class="info-val">
+                      <span class="licence-plate-badge">{{ vehicle.licenceNumber }}</span>
+                    </span>
+                  </div>
+                }
+
+                @if (rider.latitude !== null && rider.longitude !== null) {
+                  <div class="info-row">
+                    <span class="info-key">Rider GPS</span>
+                    <a
+                      [href]="getGoogleMapsUrl(rider.latitude, rider.longitude)"
+                      target="_blank"
+                      rel="noopener"
+                      class="map-pin-link"
+                    >
+                      📌 {{ rider.latitude }}, {{ rider.longitude }} (Track ↗)
+                    </a>
+                  </div>
+                }
+              </div>
+            } @else {
+              <div class="unassigned-rider-box">
+                <span>No rider assigned to this order yet.</span>
+                @if (summary.status === 'PREPARING') {
+                  <button
+                    type="button"
+                    class="mini-assign-btn"
+                    (click)="goToAssignRiderPage(summary.orderId)"
+                  >
+                    Assign Closest Rider →
+                  </button>
+                }
+              </div>
+            }
+          </div>
+
+          <!-- PICKUP RESTAURANTS INFO -->
+          @if (detail.restaurants && detail.restaurants.length > 0) {
+            <div class="drawer-section card-box">
+              <h4>🏪 Pickup Restaurants ({{ detail.restaurants.length }})</h4>
+              <div class="drawer-items">
+                @for (rest of detail.restaurants; track rest.restaurantId) {
+                  <div class="drawer-item-row">
+                    <div class="item-left">
+                      <img
+                        [src]="resolveImageUrl(rest.image)"
+                        [alt]="rest.name"
+                        class="item-thumb"
+                        onerror="this.style.display='none'"
+                      />
+                      <div>
+                        <strong class="item-name">{{ rest.name }}</strong>
+                        <span class="item-meta">{{ rest.address }}</span>
+                      </div>
+                    </div>
+                    <a [href]="'tel:' + rest.phone" class="phone-link" style="font-size: 0.8rem;">
+                      {{ rest.phone }}
+                    </a>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+
+          <!-- 3. ORDERED ITEMS & PRICE BREAKDOWN -->
+          <div class="drawer-section card-box">
+            <h4>🍔 Ordered Items ({{ detail.items.length }})</h4>
+            <div class="drawer-items">
+              @for (item of detail.items; track $index) {
+                <div class="drawer-item-row">
+                  <div class="item-left">
+                    <img
+                      [src]="resolveImageUrl(item.image)"
+                      [alt]="item.name"
+                      class="item-thumb"
+                      onerror="this.style.display='none'"
+                    />
+                    <div>
+                      <strong class="item-name">{{ item.name }}</strong>
+                      <span class="item-meta">
+                        {{ item.quantity }} × MMK {{ item.priceAtPurchase | number }}
+                      </span>
+                    </div>
+                  </div>
+                  <strong class="item-line-total">
+                    MMK {{ (item.priceAtPurchase * item.quantity) | number }}
+                  </strong>
+                </div>
+              }
+            </div>
+
+            <!-- Financial Summary Breakdown -->
+            <div class="price-breakdown">
+              <div class="breakdown-row">
+                <span>Food Subtotal</span>
+                <span>MMK {{ drawerFoodSubtotal() | number }}</span>
+              </div>
+              <div class="breakdown-row">
+                <span>Delivery Fee (Calculated)</span>
+                <span>MMK {{ drawerDeliveryFee() | number }}</span>
+              </div>
+              <div class="breakdown-row grand-total">
+                <span>Total Paid</span>
+                <span>MMK {{ detail.totalAmount | number }}</span>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+
+      <!-- Quick Admin Action Footer -->
+      <div class="drawer-footer">
+        @if (summary.status === 'PENDING') {
+          <button
+            type="button"
+            class="action-btn reject"
+            [disabled]="isActionSubmitting()"
+            (click)="handleRejectOrder(summary.orderId)"
+          >
+            ✕ Invalid Payment / Reject
+          </button>
+          <button
+            type="button"
+            class="action-btn accept"
+            [disabled]="isActionSubmitting()"
+            (click)="handleAcceptOrder(summary.orderId)"
+          >
+            {{ isActionSubmitting() ? 'Accepting...' : '✓ Verify & Accept Order →' }}
+          </button>
+        } @else if (summary.status === 'PREPARING' && !selectedOrderDetail()?.rider) {
+          <button
+            type="button"
+            class="action-btn accept"
+            (click)="goToAssignRiderPage(summary.orderId)"
+          >
+            🛵 Find Closest Rider & Dispatch →
+          </button>
+        } @else {
+          <div class="processed-note">
+            Order status is <strong>{{ statusConfig[summary.status]?.label || summary.status }}</strong>
+          </div>
+        }
+      </div>
+    </aside>
+  </div>
+}
+
+<!-- ==================== 5. FULLSCREEN PAYMENT PROOF LIGHTBOX ==================== -->
+@if (isPaymentZoomOpen() && selectedOrderDetail(); as detail) {
+  <div class="lightbox-backdrop" (click)="closePaymentZoom()">
+    <div class="lightbox-content" (click)="$event.stopPropagation()">
+      <div class="lightbox-bar">
+        <span>
+          Payment Proof • Order #{{ detail.orderId | slice:-8 | uppercase }} •
+          <strong>Expected: MMK {{ detail.totalAmount | number }}</strong>
+        </span>
+        <button type="button" class="lightbox-close" (click)="closePaymentZoom()">✕ Close</button>
+      </div>
+      <img [src]="resolveImageUrl(detail.paymentImg)" alt="Fullscreen Payment Proof" class="lightbox-img" />
+    </div>
+  </div>
+}

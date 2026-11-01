@@ -1,0 +1,506 @@
+<div class="cm-workspace">
+
+  <!-- ==================== 1. TOP KPI & FILTER BAR ==================== -->
+  <section class="cm-topbar">
+    <div class="cm-filter-pills">
+      <button
+        type="button"
+        class="filter-pill"
+        [class.active]="contactFilter() === 'ALL'"
+        (click)="contactFilter.set('ALL')"
+      >
+        <span>All Customers</span>
+        <span class="pill-badge">{{ customers().length }}</span>
+      </button>
+
+      <button
+        type="button"
+        class="filter-pill green"
+        [class.active]="contactFilter() === 'WITH_PHONE'"
+        (click)="contactFilter.set('WITH_PHONE')"
+      >
+        <span class="dot green"></span>
+        <span>Phone Verified</span>
+        <span class="pill-badge">{{ withPhoneCount() }}</span>
+      </button>
+
+      <button
+        type="button"
+        class="filter-pill slate"
+        [class.active]="contactFilter() === 'NO_PHONE'"
+        (click)="contactFilter.set('NO_PHONE')"
+      >
+        <span class="dot slate"></span>
+        <span>No Phone Yet</span>
+        <span class="pill-badge">{{ noPhoneCount() }}</span>
+      </button>
+    </div>
+
+    <div class="cm-top-right">
+      <button type="button" class="refresh-list-btn" (click)="loadAllCustomers()">
+        ↻ Refresh Directory
+      </button>
+    </div>
+  </section>
+
+  <!-- ==================== 2. MASTER-DETAIL CRM SPLIT WORKSPACE ==================== -->
+  <div class="cm-split-grid">
+
+    <!-- LEFT PANEL: Customer Directory -->
+    <aside class="cm-master-panel">
+      <div class="panel-header">
+        <div>
+          <h3>Registered Customers ({{ filteredCustomers().length }})</h3>
+          <span>Select a customer to view profile & order history</span>
+        </div>
+      </div>
+
+      <div class="search-box-wrap">
+        <input
+          type="text"
+          placeholder="Search name, email, phone, or ID..."
+          [ngModel]="searchQuery()"
+          (ngModelChange)="searchQuery.set($event)"
+        />
+      </div>
+
+      <div class="customer-list">
+        @if (isLoadingCustomers()) {
+          <div class="empty-box">
+            <div class="spinner"></div>
+            <p>Loading customer directory...</p>
+          </div>
+        } @else if (filteredCustomers().length === 0) {
+          <div class="empty-box">
+            <p>No customers match your current search.</p>
+          </div>
+        } @else {
+          @for (cust of filteredCustomers(); track cust.userId) {
+            <article
+              class="cust-list-card"
+              [class.selected]="selectedUserId() === cust.userId"
+              (click)="selectCustomer(cust.userId)"
+            >
+              @if (cust.image) {
+                <img
+                  [src]="resolveImageUrl(cust.image)"
+                  [alt]="cust.name"
+                  class="cust-avatar-img"
+                  onerror="this.style.display='none'"
+                />
+              } @else {
+                <div class="cust-avatar-initial">
+                  {{ (cust.name || 'C').charAt(0) | uppercase }}
+                </div>
+              }
+
+              <div class="cust-card-info">
+                <div class="c-row-top">
+                  <strong>{{ cust.name }}</strong>
+                  <span class="c-id-tag">#{{ cust.userId | slice:-6 | uppercase }}</span>
+                </div>
+                <span class="c-email">{{ cust.email }}</span>
+                @if (cust.phone) {
+                  <span class="c-phone">📞 {{ cust.phone }}</span>
+                } @else {
+                  <span class="c-phone muted">No phone linked</span>
+                }
+              </div>
+            </article>
+          }
+        }
+      </div>
+    </aside>
+
+    <!-- RIGHT PANEL: Customer 360° Profile & Order History -->
+    <section class="cm-detail-panel">
+      @if (isLoadingProfile()) {
+        <div class="empty-box full">
+          <div class="spinner"></div>
+          <p>Fetching customer profile...</p>
+        </div>
+      } @else if (selectedCustomer(); as customer) {
+        <!-- Top Profile Hero Banner -->
+        <div class="customer-hero-banner">
+          <div class="hero-left">
+            @if (customer.image) {
+              <img
+                [src]="resolveImageUrl(customer.image)"
+                [alt]="customer.name"
+                class="hero-avatar-img"
+              />
+            } @else {
+              <div class="hero-avatar-placeholder">
+                {{ (customer.name || 'C').charAt(0) | uppercase }}
+              </div>
+            }
+
+            <div class="hero-meta">
+              <div class="hero-name-row">
+                <h2>{{ customer.name }}</h2>
+                <span class="role-badge">{{ customer.role || 'CUSTOMER' }}</span>
+              </div>
+
+              <div class="hero-contacts">
+                <a [href]="'mailto:' + customer.email" class="contact-item">
+                  ✉️ {{ customer.email }}
+                </a>
+                <span>•</span>
+                @if (customer.phone) {
+                  <a [href]="'tel:' + customer.phone" class="contact-item phone">
+                    📞 {{ customer.phone }}
+                  </a>
+                } @else {
+                  <span class="contact-muted">📞 Phone not provided</span>
+                }
+              </div>
+
+              <code class="uuid-tag">UUID: {{ customer.userId }}</code>
+            </div>
+          </div>
+
+          <div class="hero-actions">
+            @if (customer.phone) {
+              <a [href]="'tel:' + customer.phone" class="btn-call">
+                📞 Call Customer
+              </a>
+            }
+          </div>
+        </div>
+
+        <!-- Customer Lifetime Metrics Strip -->
+        <div class="cust-metrics-grid">
+          <div class="metric-box">
+            <span class="m-label">Total Orders</span>
+            <strong class="m-val">{{ customerOrders().length }}</strong>
+          </div>
+          <div class="metric-box">
+            <span class="m-label">Lifetime Spend</span>
+            <strong class="m-val green">MMK {{ customerTotalSpent() | number }}</strong>
+          </div>
+          <div class="metric-box">
+            <span class="m-label">Completed Deliveries</span>
+            <strong class="m-val">{{ customerDeliveredCount() }}</strong>
+          </div>
+          <div class="metric-box">
+            <span class="m-label">Active Orders</span>
+            <strong class="m-val orange">{{ customerActiveOrderCount() }}</strong>
+          </div>
+        </div>
+
+        <!-- Customer Order History Section -->
+        <div class="orders-history-section">
+          <div class="history-toolbar">
+            <div>
+              <h3>Order History ({{ filteredCustomerOrders().length }})</h3>
+              <span>Click any order to inspect payment screenshot & delivery details</span>
+            </div>
+
+            <div class="mini-status-tabs">
+              @for (st of ['ALL', 'PENDING', 'PREPARING', 'OUT_FOR_DELIVERY', 'DELIVERED', 'CANCELLED']; track st) {
+                <button
+                  type="button"
+                  class="mini-tab"
+                  [class.active]="orderStatusFilter() === st"
+                  (click)="orderStatusFilter.set(st)"
+                >
+                  {{ st === 'ALL' ? 'All' : (statusConfig[st]?.label || st) }}
+                </button>
+              }
+            </div>
+          </div>
+
+          <div class="history-table-wrap">
+            @if (isLoadingOrders()) {
+              <div class="empty-box">
+                <div class="spinner"></div>
+                <p>Loading customer's order history...</p>
+              </div>
+            } @else if (filteredCustomerOrders().length === 0) {
+              <div class="empty-box">
+                <p>No orders found for this customer under the selected filter.</p>
+              </div>
+            } @else {
+              <table class="history-table">
+                <thead>
+                <tr>
+                  <th>Order ID</th>
+                  <th>Restaurant</th>
+                  <th>Placed Date</th>
+                  <th>Status</th>
+                  <th>Total Amount</th>
+                  <th class="text-right">Action</th>
+                </tr>
+                </thead>
+                <tbody>
+                  @for (ord of filteredCustomerOrders(); track ord.orderId) {
+                    <tr>
+                      <td>
+                        <span class="order-id-pill">#{{ ord.orderId | slice:-8 | uppercase }}</span>
+                      </td>
+                      <td>
+                        <strong>{{ ord.restaurantName || 'Magway Partner Restaurant' }}</strong>
+                      </td>
+                      <td class="date-col">
+                        {{ ord.createdAt ? (ord.createdAt | date:'MMM d, y • h:mm a') : '—' }}
+                      </td>
+                      <td>
+                        <span
+                          class="status-badge"
+                          [style.color]="statusConfig[ord.status]?.color || '#334155'"
+                          [style.background]="statusConfig[ord.status]?.bgLight || '#f1f5f9'"
+                        >
+                          <span class="dot" [style.background]="statusConfig[ord.status]?.color"></span>
+                          {{ statusConfig[ord.status]?.label || ord.status }}
+                        </span>
+                      </td>
+                      <td class="amount-col">MMK {{ ord.totalAmount | number }}</td>
+                      <td class="text-right">
+                        <button
+                          type="button"
+                          class="inspect-order-btn"
+                          (click)="openOrderDrawer(ord.orderId)"
+                        >
+                          Inspect Order
+                        </button>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            }
+          </div>
+        </div>
+      } @else {
+        <div class="empty-box full">
+          <h3>Select a Customer</h3>
+          <p>Click on any customer from the left directory to view their profile and order history.</p>
+        </div>
+      }
+    </section>
+
+  </div>
+</div>
+
+<!-- ==================== 3. REUSED ADMIN ORDER DETAILS & ACTION DRAWER ==================== -->
+@if (isDrawerOpen()) {
+  <div class="drawer-backdrop" (click)="closeOrderDrawer()">
+    <aside class="order-drawer" (click)="$event.stopPropagation()">
+      <div class="drawer-header">
+        <div>
+          <span class="drawer-eyebrow">CUSTOMER ORDER INSPECTION</span>
+          @if (selectedOrderDetail(); as detail) {
+            <h3>Order #{{ detail.orderId | slice:-8 | uppercase }}</h3>
+            @if (detail.createdAt) {
+              <span class="drawer-timestamp">Placed on {{ detail.createdAt | date:'MMM d, y • h:mm a' }}</span>
+            }
+          } @else {
+            <h3>Loading Order...</h3>
+          }
+        </div>
+        <button type="button" class="close-drawer-btn" (click)="closeOrderDrawer()">✕</button>
+      </div>
+
+      <div class="drawer-body">
+        @if (isLoadingOrderDetails()) {
+          <div class="empty-box">
+            <div class="spinner"></div>
+            <span>Fetching order & payment verification details...</span>
+          </div>
+        } @else if (selectedOrderDetail(); as detail) {
+          <div class="drawer-summary-box">
+            <div>
+              <span class="d-label">Order Status</span>
+              <span
+                class="status-badge"
+                [style.color]="statusConfig[detail.status]?.color"
+                [style.background]="statusConfig[detail.status]?.bgLight"
+              >
+                <span class="dot" [style.background]="statusConfig[detail.status]?.color"></span>
+                {{ statusConfig[detail.status]?.label || detail.status }}
+              </span>
+            </div>
+            <div class="text-right">
+              <span class="d-label">Total Amount</span>
+              <strong class="d-total">MMK {{ detail.totalAmount | number }}</strong>
+            </div>
+          </div>
+
+          <!-- Payment Screenshot Verification -->
+          <div class="verification-card">
+            <div class="verification-header">
+              <div>
+                <h4>💳 Payment Proof Verification</h4>
+                <p>Expected: <strong>MMK {{ detail.totalAmount | number }}</strong></p>
+              </div>
+              @if (detail.paymentImg) {
+                <a
+                  [href]="resolveImageUrl(detail.paymentImg)"
+                  target="_blank"
+                  rel="noopener"
+                  class="open-raw-link"
+                >
+                  Open Original ↗
+                </a>
+              }
+            </div>
+
+            @if (detail.paymentImg && !paymentImageError()) {
+              <div class="payment-img-container" (click)="openPaymentZoom()">
+                <img
+                  [src]="resolveImageUrl(detail.paymentImg)"
+                  alt="Payment Screenshot"
+                  class="payment-proof-img"
+                  (error)="paymentImageError.set(true)"
+                />
+                <div class="zoom-hint-badge">🔍 Click to Inspect Fullscreen</div>
+              </div>
+            } @else {
+              <div class="payment-missing-box">
+                <span>⚠️ Unable to load payment screenshot preview</span>
+              </div>
+            }
+          </div>
+
+          <!-- Delivery Info -->
+          <div class="drawer-section card-box">
+            <h4>📍 Delivery Destination</h4>
+            <div class="info-grid">
+              <div class="info-row">
+                <span class="info-key">Recipient</span>
+                <strong class="info-val">{{ detail.customer?.name || selectedCustomer()?.name }}</strong>
+              </div>
+              <div class="info-row">
+                <span class="info-key">Shipping Phone</span>
+                <span class="info-val">{{ detail.shippingPhone }}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-key">Address</span>
+                <span class="info-val">{{ detail.deliveryAddress }}</span>
+              </div>
+              @if (detail.customer?.latitude && detail.customer?.longitude) {
+                <div class="info-row">
+                  <span class="info-key">GPS Coordinates</span>
+                  <a
+                    [href]="getGoogleMapsUrl(detail.customer?.latitude, detail.customer?.longitude)"
+                    target="_blank"
+                    rel="noopener"
+                    class="map-pin-link"
+                  >
+                    📌 {{ detail.customer?.latitude }}, {{ detail.customer?.longitude }} (Map ↗)
+                  </a>
+                </div>
+              }
+            </div>
+          </div>
+
+          <!-- Assigned Rider -->
+          @if (detail.rider; as rider) {
+            <div class="drawer-section card-box">
+              <h4>🛵 Assigned Rider ({{ rider.name }})</h4>
+              <div class="info-grid">
+                <div class="info-row">
+                  <span class="info-key">Phone</span>
+                  <span class="info-val">{{ rider.phone }}</span>
+                </div>
+                @if (rider.vehicle; as v) {
+                  <div class="info-row">
+                    <span class="info-key">Vehicle</span>
+                    <span class="info-val">{{ v.type }} ({{ v.licenceNumber }})</span>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+
+          <!-- Ordered Items -->
+          <div class="drawer-section card-box">
+            <h4>🍔 Ordered Items ({{ detail.items.length }})</h4>
+            <div class="drawer-items">
+              @for (item of detail.items; track $index) {
+                <div class="drawer-item-row">
+                  <div class="item-left">
+                    <img
+                      [src]="resolveImageUrl(item.image)"
+                      [alt]="item.name"
+                      class="item-thumb"
+                      onerror="this.style.display='none'"
+                    />
+                    <div>
+                      <strong class="item-name">{{ item.name }}</strong>
+                      <span class="item-meta">{{ item.quantity }} × MMK {{ item.priceAtPurchase | number }}</span>
+                    </div>
+                  </div>
+                  <strong>MMK {{ (item.quantity * item.priceAtPurchase) | number }}</strong>
+                </div>
+              }
+            </div>
+
+            <div class="price-breakdown">
+              <div class="breakdown-row">
+                <span>Food Subtotal</span>
+                <span>MMK {{ drawerFoodSubtotal() | number }}</span>
+              </div>
+              <div class="breakdown-row">
+                <span>Delivery Fee</span>
+                <span>MMK {{ drawerDeliveryFee() | number }}</span>
+              </div>
+              <div class="breakdown-row grand-total">
+                <span>Total Paid</span>
+                <span>MMK {{ detail.totalAmount | number }}</span>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+
+      @if (selectedOrderDetail(); as detail) {
+        <div class="drawer-footer">
+          @if (detail.status === 'PENDING') {
+            <button
+              type="button"
+              class="action-btn reject"
+              [disabled]="isActionSubmitting()"
+              (click)="handleRejectOrder(detail.orderId)"
+            >
+              ✕ Reject Order
+            </button>
+            <button
+              type="button"
+              class="action-btn accept"
+              [disabled]="isActionSubmitting()"
+              (click)="handleAcceptOrder(detail.orderId)"
+            >
+              ✓ Accept & Dispatch →
+            </button>
+          } @else if (detail.status === 'PREPARING' && !detail.rider) {
+            <button
+              type="button"
+              class="action-btn accept"
+              (click)="goToAssignRiderPage(detail.orderId)"
+            >
+              🛵 Find Closest Rider & Dispatch →
+            </button>
+          } @else {
+            <div class="processed-note">
+              Order status is <strong>{{ statusConfig[detail.status]?.label || detail.status }}</strong>
+            </div>
+          }
+        </div>
+      }
+    </aside>
+  </div>
+}
+
+<!-- ==================== 4. FULLSCREEN PAYMENT PROOF LIGHTBOX ==================== -->
+@if (isPaymentZoomOpen() && selectedOrderDetail(); as detail) {
+  <div class="lightbox-backdrop" (click)="closePaymentZoom()">
+    <div class="lightbox-content" (click)="$event.stopPropagation()">
+      <div class="lightbox-bar">
+        <span>Payment Proof • Order #{{ detail.orderId | slice:-8 | uppercase }}</span>
+        <button type="button" class="lightbox-close" (click)="closePaymentZoom()">✕ Close</button>
+      </div>
+      <img [src]="resolveImageUrl(detail.paymentImg)" alt="Fullscreen Payment Proof" class="lightbox-img" />
+    </div>
+  </div>
+}

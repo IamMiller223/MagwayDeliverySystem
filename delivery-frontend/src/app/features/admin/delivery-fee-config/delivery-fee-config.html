@@ -1,0 +1,351 @@
+<div class="cfg-workspace">
+
+  <!-- ==================== 1. TOP ACTIVE CONFIG SUMMARY ROW ==================== -->
+  <section class="cfg-kpi-row">
+    <div class="cfg-kpi-card">
+      <div class="kpi-badge orange">🏁</div>
+      <div>
+        <span class="kpi-label">Active Base Delivery Fee</span>
+        <strong class="kpi-value">MMK {{ savedConfig().baseDeliveryFee | number }}</strong>
+        <span class="kpi-sub">Starting flat fee per order</span>
+      </div>
+    </div>
+
+    <div class="cfg-kpi-card">
+      <div class="kpi-badge blue">📏</div>
+      <div>
+        <span class="kpi-label">Distance Rate (Per KM)</span>
+        <strong class="kpi-value">MMK {{ savedConfig().deliveryFeePerKm | number }} <small>/ km</small></strong>
+        <span class="kpi-sub">Multiplied by route distance</span>
+      </div>
+    </div>
+
+    <div class="cfg-kpi-card">
+      <div class="kpi-badge purple">🏪</div>
+      <div>
+        <span class="kpi-label">Multi-Stop Surcharge</span>
+        <strong class="kpi-value">MMK {{ savedConfig().multiStopFee | number }} <small>/ extra stop</small></strong>
+        <span class="kpi-sub">Added per additional restaurant</span>
+      </div>
+    </div>
+
+    <div class="cfg-kpi-card">
+      <div class="kpi-badge green">⬆️</div>
+      <div>
+        <span class="kpi-label">Rounding Ceiling</span>
+        <strong class="kpi-value">MMK {{ savedConfig().roundingCeiling | number }}</strong>
+        <span class="kpi-sub">ID: {{ savedConfig().id }}</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 2. MAIN SPLIT GRID: EDITOR (LEFT) & SIMULATOR (RIGHT) ==================== -->
+  <div class="cfg-split-grid">
+
+    <!-- LEFT PANEL: Pricing Rules Editor (PUT /api/admin/config) -->
+    <section class="cfg-editor-panel">
+      <div class="panel-header">
+        <div>
+          <span class="eyebrow">SYSTEM PRICING ENGINE</span>
+          <h3>Adjust Magway Delivery Fee Rules</h3>
+          <p>Changes immediately apply to all new customer checkouts</p>
+        </div>
+
+        @if (hasUnsavedChanges()) {
+          <span class="unsaved-pill">● Unsaved Changes</span>
+        } @else {
+          <span class="synced-pill">✓ Synced with Server</span>
+        }
+      </div>
+
+      @if (isLoading()) {
+        <div class="loading-box">
+          <div class="spinner"></div>
+          <p>Fetching active pricing configuration...</p>
+        </div>
+      } @else {
+        <div class="editor-body">
+
+          <!-- 1. Base Delivery Fee -->
+          <div class="rule-field-card">
+            <div class="rule-top">
+              <div>
+                <label>1. Base Delivery Fee (MMK)</label>
+                <p>Minimum starting charge applied to every delivery order</p>
+              </div>
+              <div class="step-btns">
+                <button type="button" (click)="adjustField('BASE', -100)">-100</button>
+                <button type="button" (click)="adjustField('BASE', 100)">+100</button>
+              </div>
+            </div>
+
+            <div class="input-with-unit">
+              <span class="unit-prefix">MMK</span>
+              <input
+                type="number"
+                min="0"
+                step="100"
+                [ngModel]="formBaseFee()"
+                (ngModelChange)="formBaseFee.set($event)"
+              />
+            </div>
+          </div>
+
+          <!-- 2. Delivery Fee Per KM -->
+          <div class="rule-field-card">
+            <div class="rule-top">
+              <div>
+                <label>2. Distance Rate per Kilometer (MMK / km)</label>
+                <p>Added per kilometer between pickup restaurant and customer</p>
+              </div>
+              <div class="step-btns">
+                <button type="button" (click)="adjustField('KM', -50)">-50</button>
+                <button type="button" (click)="adjustField('KM', 50)">+50</button>
+              </div>
+            </div>
+
+            <div class="input-with-unit">
+              <span class="unit-prefix">MMK</span>
+              <input
+                type="number"
+                min="0"
+                step="50"
+                [ngModel]="formFeePerKm()"
+                (ngModelChange)="formFeePerKm.set($event)"
+              />
+              <span class="unit-suffix">per km</span>
+            </div>
+          </div>
+
+          <!-- 3. Multi-Stop Fee -->
+          <div class="rule-field-card">
+            <div class="rule-top">
+              <div>
+                <label>3. Multi-Restaurant Stop Fee (MMK)</label>
+                <p>Surcharge for each additional restaurant pickup in a single order</p>
+              </div>
+              <div class="step-btns">
+                <button type="button" (click)="adjustField('STOP', -100)">-100</button>
+                <button type="button" (click)="adjustField('STOP', 100)">+100</button>
+              </div>
+            </div>
+
+            <div class="input-with-unit">
+              <span class="unit-prefix">MMK</span>
+              <input
+                type="number"
+                min="0"
+                step="100"
+                [ngModel]="formMultiStopFee()"
+                (ngModelChange)="formMultiStopFee.set($event)"
+              />
+              <span class="unit-suffix">per extra stop</span>
+            </div>
+          </div>
+
+          <!-- 4. Rounding Ceiling -->
+          <div class="rule-field-card">
+            <div class="rule-top">
+              <div>
+                <label>4. Rounding Ceiling Step (MMK)</label>
+                <p>Rounds fractional distance fees up to clean kyat denominations</p>
+              </div>
+              <div class="preset-group">
+                @for (preset of roundingPresets; track preset) {
+                  <button
+                    type="button"
+                    class="preset-chip"
+                    [class.active]="formRoundingCeiling() === preset"
+                    (click)="formRoundingCeiling.set(preset)"
+                  >
+                    {{ preset }}
+                  </button>
+                }
+              </div>
+            </div>
+
+            <div class="input-with-unit">
+              <span class="unit-prefix">MMK</span>
+              <input
+                type="number"
+                min="1"
+                step="10"
+                [ngModel]="formRoundingCeiling()"
+                (ngModelChange)="formRoundingCeiling.set($event)"
+              />
+              <span class="unit-suffix">ceiling multiple</span>
+            </div>
+          </div>
+
+          @if (saveSuccessMessage()) {
+            <div class="success-banner">
+              ✓ {{ saveSuccessMessage() }}
+            </div>
+          }
+        </div>
+
+        <div class="editor-footer">
+          <button
+            type="button"
+            class="btn-reset"
+            [disabled]="!hasUnsavedChanges() || isSaving()"
+            (click)="resetFormToSaved()"
+          >
+            Discard Changes
+          </button>
+
+          <button
+            type="button"
+            class="btn-save-config"
+            [disabled]="isSaving() || !hasUnsavedChanges()"
+            (click)="saveConfig()"
+          >
+            {{ isSaving() ? 'Updating Config...' : '✓ Save & Publish Pricing Rules' }}
+          </button>
+        </div>
+      }
+    </section>
+
+    <!-- RIGHT PANEL: Live Delivery Fee Simulator & Route Comparison -->
+    <section class="cfg-simulator-panel">
+      <div class="panel-header">
+        <div>
+          <span class="eyebrow">LIVE FEE SANDBOX</span>
+          <h3>Interactive Checkout Fee Simulator</h3>
+          <p>Test how your draft rules calculate fees across Magway routes</p>
+        </div>
+      </div>
+
+      <div class="simulator-body">
+        <!-- Sliders for Distance & Stops -->
+        <div class="sim-controls-box">
+          <div class="slider-group">
+            <div class="slider-label-row">
+              <span>🛵 Delivery Distance</span>
+              <strong>{{ simDistanceKm() | number:'1.1-1' }} km</strong>
+            </div>
+            <input
+              type="range"
+              min="0.5"
+              max="12"
+              step="0.1"
+              class="sim-slider"
+              [ngModel]="simDistanceKm()"
+              (ngModelChange)="simDistanceKm.set($event)"
+            />
+            <div class="slider-ticks">
+              <span>0.5 km</span>
+              <span>3 km</span>
+              <span>6 km</span>
+              <span>9 km</span>
+              <span>12 km</span>
+            </div>
+          </div>
+
+          <div class="stops-selector-row">
+            <span>🏪 Pickup Restaurants in Order:</span>
+            <div class="stop-pills">
+              @for (s of [1, 2, 3, 4]; track s) {
+                <button
+                  type="button"
+                  class="stop-pill"
+                  [class.active]="simRestaurantStops() === s"
+                  (click)="simRestaurantStops.set(s)"
+                >
+                  {{ s }} {{ s === 1 ? 'Stop' : 'Stops' }}
+                </button>
+              }
+            </div>
+          </div>
+        </div>
+
+        <!-- Step-by-Step Formula Receipt -->
+        <div class="receipt-card">
+          <div class="receipt-head">
+            <span>FORMULA BREAKDOWN</span>
+            @if (hasUnsavedChanges()) {
+              <span class="diff-tag">
+                Was MMK {{ simSavedFinalFee() | number }}
+              </span>
+            }
+          </div>
+
+          <div class="receipt-lines">
+            <div class="r-line">
+              <span>Base Delivery Fee</span>
+              <strong>MMK {{ formBaseFee() | number }}</strong>
+            </div>
+
+            <div class="r-line">
+              <span>
+                Distance Charge ({{ simDistanceKm() | number:'1.1-1' }} km × MMK {{ formFeePerKm() | number }})
+              </span>
+              <strong>MMK {{ simDistanceCharge() | number:'1.0-0' }}</strong>
+            </div>
+
+            <div class="r-line">
+              <span>
+                Multi-Stop Fee ({{ simExtraStopsCount() }} extra × MMK {{ formMultiStopFee() | number }})
+              </span>
+              <strong>MMK {{ simMultiStopCharge() | number }}</strong>
+            </div>
+
+            <div class="r-line subtotal">
+              <span>Raw Unrounded Subtotal</span>
+              <span>MMK {{ simRawSubtotal() | number:'1.0-0' }}</span>
+            </div>
+
+            <div class="r-line">
+              <span>Ceiling Rounding (Nearest MMK {{ formRoundingCeiling() }})</span>
+              <span class="round-plus">+ MMK {{ simRoundingAdjustment() | number:'1.0-0' }}</span>
+            </div>
+
+            <div class="r-line grand">
+              <span>Final Customer Delivery Fee</span>
+              <strong class="grand-amount">MMK {{ simRoundedFinalFee() | number }}</strong>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sample Magway Scenarios Table -->
+        <div class="scenarios-box">
+          <h4>📌 Magway Benchmark Routes Comparison</h4>
+          <table class="scenarios-table">
+            <thead>
+            <tr>
+              <th>Scenario</th>
+              <th>Distance / Stops</th>
+              <th>Current Live</th>
+              <th>Draft New Fee</th>
+            </tr>
+            </thead>
+            <tbody>
+              @for (sc of sampleScenarios; track sc.label) {
+                <tr
+                  class="scenario-row"
+                  (click)="simDistanceKm.set(sc.distanceKm); simRestaurantStops.set(sc.stops)"
+                  title="Click to load into simulator"
+                >
+                  <td>
+                    <strong>{{ sc.label }}</strong>
+                    <span class="sc-route">{{ sc.route }}</span>
+                  </td>
+                  <td>
+                    <span class="sc-meta">{{ sc.distanceKm }} km • {{ sc.stops }} stop(s)</span>
+                  </td>
+                  <td class="live-col">
+                    MMK {{ calculateScenarioSavedFee(sc) | number }}
+                  </td>
+                  <td class="draft-col" [class.changed]="calculateScenarioDraftFee(sc) !== calculateScenarioSavedFee(sc)">
+                    MMK {{ calculateScenarioDraftFee(sc) | number }}
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</div>
